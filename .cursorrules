@@ -1,0 +1,216 @@
+# KPSULL - Marketplace de Créateurs
+
+## Contexte du Projet
+KPSULL est une marketplace qui met en relation des créateurs avec des clients pour la vente de créations uniques. Les créateurs paient un abonnement mensuel (100€/mois ou 1000€/an) pour publier et vendre leurs créations en toute autonomie via un back office dédié.
+
+### Catégorisation par Genre
+Les produits sont organisés par genre : **Homme**, **Femme**, et **Unisexe**. Les produits unisexes apparaissent dans les deux catégories homme et femme. La navigation principale permet d'accéder directement aux produits par genre.
+
+## Architecture et Bonnes Pratiques
+
+### Structure du Projet
+- **Frontend**: SvelteKit avec TypeScript
+- **Base de données**: PostgreSQL avec Drizzle ORM
+- **Styling**: Tailwind CSS + DaisyUI (composants)
+- **Paiements**: Stripe
+- **Authentification**: Lucia Auth
+- **Thème**: Orange avec support sombre/clair
+
+### Organisation des Dossiers
+```
+src/
+├── lib/
+│   ├── components/          # Composants réutilisables
+│   ├── stores/             # Stores Svelte (panier, auth, etc.)
+│   ├── utils/              # Utilitaires et helpers
+│   ├── types/              # Types TypeScript
+│   └── server/
+│       ├── db/             # Configuration et schémas DB
+│       ├── auth/           # Logique d'authentification
+│       └── api/            # API routes
+├── routes/                 # Pages et routes SvelteKit
+└── app.html               # Template HTML principal
+```
+
+### Règles de Développement
+
+#### 1. Composants
+- Créer des composants réutilisables dans `src/lib/components/`
+- Utiliser des noms descriptifs (ex: `ProductCard.svelte`, `CreatorProfile.svelte`)
+- Séparer la logique métier des composants UI
+- Utiliser TypeScript pour tous les composants
+
+#### 2. Stores Svelte
+- Créer des stores pour l'état global (panier, utilisateur, etc.)
+- Utiliser des stores typés avec TypeScript
+- Éviter la duplication de logique entre stores
+
+#### 3. Base de Données
+- Utiliser Drizzle ORM pour toutes les opérations DB
+- Créer des schémas clairs et bien typés
+- Utiliser des migrations pour les changements de schéma
+- Éviter les requêtes SQL brutes
+
+#### 4. API Routes
+- Créer des routes API dans `src/routes/api/`
+- Utiliser des noms RESTful (GET, POST, PUT, DELETE)
+- Valider les données d'entrée
+- Gérer les erreurs de manière cohérente
+
+#### 5. Sécurité
+- Valider toutes les données côté serveur
+- Utiliser des tokens CSRF
+- Protéger les routes sensibles
+- Chiffrer les données sensibles
+
+#### 6. Performance
+- Optimiser les images (WebP, lazy loading)
+- Utiliser la pagination pour les listes
+- Implémenter le cache côté client
+- Minimiser les requêtes DB
+
+### 7. Design et UI
+- **Styling**: Utiliser UNIQUEMENT Tailwind CSS + DaisyUI
+- **Fichier CSS**: Utiliser `app.css` uniquement pour les variables CSS
+- **Couleurs**: Thème orange principal avec support sombre/clair
+- **Variables CSS**: TOUJOURS utiliser les variables CSS définies (primary, base-100, base-content, etc.) au lieu des couleurs Tailwind directes (bg-orange-600, text-gray-900, etc.)
+- **Style**: Design très simple mettant en avant les créations
+- **Composants**: Utiliser DaisyUI pour tous les composants (boutons, cards, modals, etc.)
+- **Landing**: Page principale avec cards de créations (photo, prix, créateur)
+- **Navigation**: Clic sur card → page produit → bouton "Ajouter au panier"
+- **Header**: Bouton principal "Vendre mes créations" pour les créateurs
+
+## Entités Principales
+
+### Créateur (Creator)
+- id, nom, description, photo de profil, site web, réseaux sociaux
+- Statut (actif/inactif), date de création
+- Abonnement (mensuel 100€/an 1000€), date d'expiration
+- Compte bancaire pour les paiements
+
+### Produit (Product)
+- id, nom, description, prix, images, taille, couleur
+- Référence au créateur, genre (homme/femme/unisexe), stock
+- Statut (disponible/épuisé/archivé)
+
+### Panier (Cart)
+- Session utilisateur, produits ajoutés, quantités
+- Gestion des variations (taille, couleur)
+
+### Commande (Order)
+- Informations client, produits, montant total
+- Statut de commande, suivi, paiement
+- Commission KPSULL (pourcentage sur chaque vente)
+- Paiement créateur (montant après commission)
+
+## Fonctionnalités Requises
+
+### Pages Principales
+1. **Page d'accueil**: Affichage des produits avec créateur et prix
+2. **Page produits homme**: Produits homme + unisexes avec filtres
+3. **Page produits femme**: Produits femme + unisexes avec filtres
+4. **Page produit**: Détails, photos multiples, ajout au panier
+5. **Page créateur**: Profil et produits d'un créateur
+6. **Panier**: Gestion des articles, calcul des totaux
+7. **Checkout**: Processus de commande avec Stripe
+
+### Back Office Créateurs
+1. **Dashboard créateur**: Vue d'ensemble des ventes, statistiques
+2. **Gestion produits**: Ajout, modification, suppression de créations
+3. **Gestion commandes**: Suivi des commandes, expédition
+4. **Gestion profil**: Informations personnelles, photos
+5. **Abonnement**: Gestion de l'abonnement, facturation
+6. **Paiements**: Historique des paiements reçus
+
+### Fonctionnalités Techniques
+- Navigation par genre (Homme/Femme) avec produits unisexes inclus
+- Recherche et filtrage des produits par genre
+- Système de panier persistant
+- Intégration Stripe pour les paiements (clients et créateurs)
+- Gestion des images (upload, redimensionnement)
+- Responsive design
+- SEO optimisé
+- Système d'abonnement avec facturation automatique
+- Commission automatique sur les ventes
+- Back office sécurisé pour créateurs
+
+## Conventions de Code
+
+### Nommage
+- Composants: PascalCase (`ProductCard.svelte`)
+- Fichiers: kebab-case (`product-details.svelte`)
+- Variables: camelCase (`productName`)
+- Constantes: UPPER_SNAKE_CASE (`API_BASE_URL`)
+
+### TypeScript
+- Toujours typer les props des composants
+- Créer des interfaces pour les données complexes
+- Utiliser les types Drizzle générés automatiquement
+
+### CSS/Styling
+- Utiliser UNIQUEMENT Tailwind CSS + DaisyUI
+- Le fichier `app.css` contient SEULEMENT les variables CSS (couleurs, thèmes)
+- Utiliser DaisyUI pour tous les composants (btn, card, modal, etc.)
+- Thème orange avec support sombre/clair
+- Design mobile-first et très simple
+- Mettre en avant les créations sur la landing
+
+## Modèle Économique
+
+### Abonnements Créateurs
+- **Mensuel**: 100€/mois
+- **Annuel**: 1000€/an (économie de 200€)
+- Facturation automatique via Stripe
+- Accès au back office et publication illimitée
+
+### Commissions
+- Commission KPSULL sur chaque vente (à définir)
+- Paiement automatique aux créateurs après commission
+- Historique des transactions
+
+## Intégrations Externes
+
+### Stripe
+- Utiliser Stripe Elements pour les formulaires de paiement
+- Implémenter webhooks pour les notifications
+- Gérer les erreurs de paiement
+- Gestion des abonnements récurrents
+- Paiements aux créateurs
+
+### Images
+- Optimiser les images automatiquement
+- Utiliser des formats modernes (WebP)
+- Implémenter le lazy loading
+
+## Tests
+- Tests unitaires pour la logique métier
+- Tests d'intégration pour les API
+- Tests E2E pour les parcours utilisateur critiques
+
+## Déploiement
+- Configuration pour production
+- Variables d'environnement sécurisées
+- Monitoring et logs
+- Backup de la base de données
+
+## Variables d'Environnement Requises
+```env
+DATABASE_URL=postgresql://...
+STRIPE_SECRET_KEY=sk_...
+STRIPE_PUBLISHABLE_KEY=pk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+LUCIA_SECRET=...
+PUBLIC_APP_URL=http://localhost:5173
+KPSULL_COMMISSION_RATE=0.05
+CREATOR_MONTHLY_PRICE=10000
+CREATOR_YEARLY_PRICE=100000
+```
+
+## Notes Importantes
+- Toujours vérifier la duplication de code
+- Maintenir une architecture propre et modulaire
+- Documenter les composants complexes
+- Suivre les bonnes pratiques SvelteKit
+- Optimiser pour les performances
+- Sécuriser l'accès au back office créateurs
+- Gérer les abonnements et paiements avec précision

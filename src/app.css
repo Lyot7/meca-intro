@@ -1,0 +1,494 @@
+@import 'tailwindcss';
+
+/* Variables CSS pour le thème */
+:root {
+	/* Couleurs principales */
+	--color-primary: #ea580c;
+	--color-primary-light: #f97316;
+	--color-primary-dark: #c2410c;
+	--color-primary-50: #fff7ed;
+	--color-primary-100: #ffedd5;
+	--color-primary-900: #9a3412;
+	
+	/* Couleurs de base */
+	--color-background: #ffffff;
+	--color-surface: #fafafa;
+	--color-surface-elevated: #ffffff;
+	--color-text: #0f172a;
+	--color-text-muted: #64748b;
+	--color-text-light: #94a3b8;
+	
+	/* Bordures et ombres */
+	--border-radius: 12px;
+	--border-radius-lg: 16px;
+	--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+	--shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+	
+	/* Transitions */
+	--transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Thème sombre */
+[data-theme="dark"] {
+	--color-background: #1a1a1a;
+	--color-surface: #2a2a2a;
+	--color-surface-elevated: #3a3a3a;
+	--color-text: #f8fafc;
+	--color-text-muted: #cbd5e1;
+	--color-text-light: #64748b;
+}
+
+/* Styles de base */
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	background-color: var(--color-background);
+	color: var(--color-text);
+	transition: background-color var(--transition-normal), color var(--transition-normal);
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Utilitaires personnalisés */
+.text-gradient {
+	background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+.card-hover {
+	transition: all var(--transition-normal);
+	border-radius: var(--border-radius);
+	background: var(--color-surface-elevated);
+	box-shadow: var(--shadow-sm);
+}
+
+.card-hover:hover {
+	transform: translateY(-4px);
+	box-shadow: var(--shadow-xl);
+}
+
+/* Styles modernes inspirés de ly0t.fr */
+.glass-effect {
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .glass-effect {
+	background: rgba(15, 23, 42, 0.8);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Boutons orange avec opacité */
+.btn-orange-glass {
+	background: rgba(249, 115, 22, 0.2);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border: 1px solid rgba(249, 115, 22, 0.3);
+	color: rgb(249, 115, 22);
+	transition: all 0.2s ease;
+}
+
+.btn-orange-glass:hover {
+	background: rgba(249, 115, 22, 0.3);
+	border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+[data-theme="dark"] .btn-orange-glass {
+	background: rgba(249, 115, 22, 0.15);
+	border: 1px solid rgba(249, 115, 22, 0.25);
+	color: rgb(251, 146, 60);
+}
+
+[data-theme="dark"] .btn-orange-glass:hover {
+	background: rgba(249, 115, 22, 0.25);
+	border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.hero-gradient {
+	background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+}
+
+[data-theme="dark"] .hero-gradient {
+	background: linear-gradient(135deg, rgba(234, 88, 12, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+}
+
+/* Boutons modernes */
+.btn-modern {
+	background: var(--color-primary);
+	color: white;
+	border: none;
+	border-radius: var(--border-radius);
+	padding: 12px 24px;
+	font-weight: 600;
+	transition: all var(--transition-normal);
+	box-shadow: var(--shadow-sm);
+}
+
+.btn-modern:hover {
+	background: var(--color-primary-dark);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-md);
+}
+
+.btn-outline-modern {
+	background: transparent;
+	color: var(--color-primary);
+	border: 2px solid var(--color-primary);
+	border-radius: var(--border-radius);
+	padding: 10px 22px;
+	font-weight: 600;
+	transition: all var(--transition-normal);
+}
+
+.btn-outline-modern:hover {
+	background: var(--color-primary);
+	color: white;
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-md);
+}
+
+/* Force la couleur primaire orange pour DaisyUI */
+.bg-primary {
+	background-color: #ea580c !important;
+}
+
+.text-primary {
+	color: #ea580c !important;
+}
+
+.border-primary {
+	border-color: #ea580c !important;
+}
+
+.hover\:bg-primary\/90:hover {
+	background-color: rgba(234, 88, 12, 0.9) !important;
+}
+
+/* Police Asimovian pour le titre KPSULL */
+.font-asimovian {
+	font-family: 'Asimovian', monospace;
+	font-weight: 400;
+	letter-spacing: 0.05em;
+}
+
+/* Fond orange avec 30% d'opacité pour les liens actifs */
+.bg-primary-30 {
+	background-color: rgba(234, 88, 12, 0.3) !important;
+}
+
+/* Background principal en gris sombre */
+.page-background {
+	background-color: var(--color-background);
+	min-height: 100vh;
+}
+
+/* Header avec variables CSS */
+.header-glass {
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	background: var(--color-surface);
+	border: 1px solid var(--color-surface-elevated);
+	box-shadow: var(--shadow-lg);
+}
+
+.header-button {
+	background: var(--color-surface-elevated);
+	border: 1px solid var(--color-surface-elevated);
+	transition: all var(--transition-normal);
+}
+
+.header-button:hover {
+	background: var(--color-surface);
+}
+
+.header-dropdown {
+	background: var(--color-surface);
+	border: 1px solid var(--color-surface-elevated);
+	box-shadow: var(--shadow-xl);
+}
+
+/* Styles pour les pages d'authentification */
+.auth-main {
+	padding: 0;
+	margin: 0;
+	width: 100%;
+}
+
+/* Styles pour les pages normales */
+.main-content {
+	container: mx-auto;
+	padding: 2rem 1rem;
+	width: 100%;
+	max-width: 100%;
+}
+
+.auth-background {
+	background: linear-gradient(135deg, var(--color-background) 0%, var(--color-surface) 100%);
+	position: relative;
+	min-height: calc(100vh - 120px);
+	width: 100%;
+}
+
+/* Responsive pour les pages d'auth */
+@media (max-width: 768px) {
+	.auth-background {
+		min-height: calc(100vh - 100px);
+	}
+}
+
+.auth-card {
+	background: var(--color-surface-elevated);
+	border: 1px solid var(--color-surface);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--shadow-xl);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	transition: all var(--transition-normal);
+}
+
+.auth-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Formulaires d'authentification */
+.form-group {
+	position: relative;
+}
+
+.form-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--color-text);
+	margin-bottom: 8px;
+}
+
+.form-input {
+	width: 100%;
+	padding: 16px 20px;
+	border: 2px solid var(--color-surface);
+	border-radius: var(--border-radius);
+	background: var(--color-background);
+	color: var(--color-text);
+	font-size: 16px;
+	transition: all var(--transition-normal);
+	box-shadow: var(--shadow-sm);
+}
+
+.form-input:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+	transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+	color: var(--color-text-light);
+}
+
+/* Boutons d'authentification */
+.btn-auth-primary {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 16px 24px;
+	background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+	color: white;
+	border: none;
+	border-radius: var(--border-radius);
+	font-weight: 600;
+	font-size: 16px;
+	transition: all var(--transition-normal);
+	box-shadow: var(--shadow-md);
+	cursor: pointer;
+}
+
+.btn-auth-primary:hover:not(:disabled) {
+	background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-lg);
+}
+
+.btn-auth-primary:active {
+	transform: translateY(0);
+}
+
+.btn-auth-primary:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.btn-auth-secondary {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 14px 24px;
+	background: transparent;
+	color: var(--color-primary);
+	border: 2px solid var(--color-primary);
+	border-radius: var(--border-radius);
+	font-weight: 600;
+	font-size: 16px;
+	transition: all var(--transition-normal);
+	text-decoration: none;
+}
+
+.btn-auth-secondary:hover {
+	background: var(--color-primary);
+	color: white;
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-md);
+}
+
+/* Animations */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideUp {
+	from {
+		opacity: 0;
+		transform: translateY(40px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes shake {
+	0%, 100% {
+		transform: translateX(0);
+	}
+	10%, 30%, 50%, 70%, 90% {
+		transform: translateX(-5px);
+	}
+	20%, 40%, 60%, 80% {
+		transform: translateX(5px);
+	}
+}
+
+.animate-fade-in {
+	animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+	animation: slideUp 0.8s ease-out;
+}
+
+.animate-shake {
+	animation: shake 0.5s ease-in-out;
+}
+
+/* Cartes d'inscription */
+.register-card {
+	background: var(--color-surface-elevated);
+	border: 2px solid var(--color-surface);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--shadow-lg);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	transition: all var(--transition-normal);
+	position: relative;
+	overflow: hidden;
+}
+
+.register-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+	opacity: 0;
+	transition: opacity var(--transition-normal);
+}
+
+.register-card:hover {
+	transform: translateY(-8px);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	border-color: var(--color-primary);
+}
+
+.register-card:hover::before {
+	opacity: 1;
+}
+
+.register-card-creator {
+	border-color: var(--color-primary);
+	background: linear-gradient(135deg, var(--color-surface-elevated) 0%, rgba(234, 88, 12, 0.02) 100%);
+}
+
+.register-card-creator::before {
+	opacity: 1;
+}
+
+.register-card-creator:hover {
+	border-color: var(--color-primary-dark);
+	background: linear-gradient(135deg, var(--color-surface-elevated) 0%, rgba(234, 88, 12, 0.05) 100%);
+}
+
+/* Badges et étiquettes */
+.badge-premium {
+	background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+	color: white;
+	font-weight: 600;
+}
+
+.badge-free {
+	background: linear-gradient(135deg, #10b981, #059669);
+	color: white;
+	font-weight: 600;
+}
+
+/* Responsive pour mobile */
+@media (max-width: 640px) {
+	.auth-card {
+		margin: 16px;
+		border-radius: var(--border-radius);
+	}
+	
+	.register-card {
+		margin: 0;
+		border-radius: var(--border-radius);
+	}
+	
+	.form-input {
+		padding: 14px 16px;
+		font-size: 16px; /* Évite le zoom sur iOS */
+	}
+	
+	.btn-auth-primary,
+	.btn-auth-secondary {
+		padding: 14px 20px;
+		font-size: 16px;
+	}
+}
