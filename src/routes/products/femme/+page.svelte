@@ -147,10 +147,9 @@
 				name: product.name,
 				price: product.price,
 				image: product.image,
-				creator: { name: product.creator }
+				creator: { name: product.creator },
+				creatorId: product.creator.toLowerCase().replace(/\s+/g, '-')
 			}}
-			href="/products/{product.id}"
-			creatorHref="/creators/{product.creator.toLowerCase().replace(/\s+/g, '-')}"
 		/>
 	{/each}
 </div>

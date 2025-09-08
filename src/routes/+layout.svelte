@@ -4,35 +4,69 @@
 	import SvelteLogo from '$lib/components/SvelteLogo.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import { authStore } from '$lib/presentation/stores/authStore.js';
 	
-	// État de connexion (mocké pour l'exemple)
+	// État de connexion depuis le store
 	let isLoggedIn: boolean = false;
-	let userType: 'client' | 'creator' = 'client';
-	let user: { name: string; email: string; type: string } | null = null;
+	let user: any = null;
 	let cartCount: number = 0;
 	
-	// Fonction pour simuler la connexion (à remplacer par la vraie logique)
-	function checkAuth(): void {
-		// Ici on vérifierait le token/session
-		// Pour l'exemple, on simule un créateur connecté
-		const mockCreator: { name: string; email: string; type: string } = {
-			name: 'Marie Dubois',
-			email: 'marie@example.com',
-			type: 'creator'
-		};
-		
-		// Décommentez la ligne suivante pour simuler un créateur connecté
-		// isLoggedIn = true; userType = 'creator'; user = mockCreator;
+	// Fonction pour vérifier l'état de connexion
+	async function checkAuth(): Promise<void> {
+		try {
+			const response = await fetch('/api/auth/me');
+			const data = await response.json();
+			
+			if (data.success) {
+				isLoggedIn = true;
+				user = data.user;
+				authStore.setUser(data.user);
+			} else {
+				isLoggedIn = false;
+				user = null;
+				authStore.setUser(null);
+			}
+		} catch (error) {
+			console.error('Erreur lors de la vérification de l\'auth:', error);
+			isLoggedIn = false;
+			user = null;
+			authStore.setUser(null);
+		}
 	}
 	
 	// Vérifier l'auth au chargement
-	checkAuth();
+	onMount(() => {
+		checkAuth();
+		
+		// Écouter les changements du store d'authentification
+		const unsubscribe = authStore.subscribe((authState) => {
+			isLoggedIn = authState.isAuthenticated;
+			user = authState.user;
+		});
+		
+		// Nettoyer l'abonnement
+		return unsubscribe;
+	});
 	
-	function handleLogout(): void {
-		isLoggedIn = false;
-		userType = 'client';
-		user = null;
+	async function handleLogout(): Promise<void> {
+		try {
+			await fetch('/api/auth/logout', { method: 'POST' });
+		} catch (error) {
+			console.error('Erreur lors de la déconnexion:', error);
+		}
+		
+		// Utiliser la méthode logout du store
+		authStore.logout();
 		goto('/');
+	}
+	
+	// Fonction pour déterminer le type d'utilisateur
+	function getUserType(): 'admin' | 'creator' | 'client' {
+		if (!user) return 'client';
+		if (user.email === 'admin@kpsull.com') return 'admin';
+		if (user.email === 'createur@kpsull.com') return 'creator';
+		return 'client';
 	}
 
 	// Fonction pour déterminer si un lien est actif
@@ -64,54 +98,33 @@
 
 					<!-- Navigation centrale -->
 					<nav class="hidden md:flex items-center space-x-1">
-						<a href="/" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Accueil
-						</a>
-						<a href="/products/homme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/homme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Homme
-						</a>
-						<a href="/products/femme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/femme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Femme
-						</a>
+						{#if !isLoggedIn || (getUserType() !== 'admin' && !$page.url.pathname.startsWith('/creator/dashboard'))}
+							<a href="/" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
+								Accueil
+							</a>
+							<a href="/products/homme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/homme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
+								Homme
+							</a>
+							<a href="/products/femme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/femme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
+								Femme
+							</a>
+						{/if}
+						
+						<!-- Lien Administration (uniquement pour les admins) -->
+						{#if isLoggedIn && getUserType() === 'admin'}
+							<a href="/admin" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/admin') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/admin') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
+								Administration
+							</a>
+						{/if}
 					</nav>
 				
 					<!-- Actions droite -->
 					<div class="flex items-center space-x-3">
-						{#if isLoggedIn && userType === 'creator'}
-							<!-- Espace créateur connecté -->
-							<a href="/creator/dashboard" class="hidden sm:inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg whitespace-nowrap" style="background-color: var(--color-primary); color: white;">
-								<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-									<path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
-								</svg>
-								Espace créateur
-							</a>
-						{/if}
-						
-						
 						{#if isLoggedIn}
-							<!-- Menu utilisateur connecté -->
-							<div class="dropdown dropdown-end">
-								<div tabindex="0" role="button" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Menu utilisateur">
-									<div class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">
-										{user?.name?.charAt(0) || 'U'}
-									</div>
-								</div>
-								<ul class="menu menu-sm dropdown-content header-dropdown rounded-2xl z-[1] mt-3 w-52 p-2">
-									<li class="menu-title">
-										<span class="text-xs uppercase tracking-wide" style="color: var(--color-text-muted);">{user?.name || 'Utilisateur'}</span>
-									</li>
-									<li><a href="/profile" class="rounded-xl">Mon profil</a></li>
-									{#if userType === 'creator'}
-										<li><a href="/creator/dashboard" class="rounded-xl">Espace créateur</a></li>
-										<li><a href="/creator/products" class="rounded-xl">Mes créations</a></li>
-										<li><a href="/creator/orders" class="rounded-xl">Commandes</a></li>
-									{:else}
-										<li><a href="/orders" class="rounded-xl">Mes commandes</a></li>
-									{/if}
-									<li><hr class="my-2 border-base-content/10"></li>
-									<li><button on:click={handleLogout} class="rounded-xl text-error">Se déconnecter</button></li>
-								</ul>
-							</div>
+							<!-- Bouton déconnexion -->
+							<button on:click={handleLogout} class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg whitespace-nowrap" style="background-color: var(--color-primary); color: white;">
+								Déconnexion
+							</button>
 						{:else}
 							<!-- Se connecter (bouton principal orange) -->
 							<a href="/auth" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg whitespace-nowrap" style="background-color: var(--color-primary); color: white;">
@@ -124,8 +137,17 @@
 							<ThemeToggle />
 						</div>
 						
-						<!-- Panier (seulement pour les clients) -->
-						{#if !isLoggedIn || userType === 'client'}
+						<!-- Icône Mon profil (uniquement si connecté) -->
+						{#if isLoggedIn}
+							<a href="/profile" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Mon profil">
+								<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
+									<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+								</svg>
+							</a>
+						{/if}
+						
+						<!-- Panier (seulement pour les clients non connectés ou clients connectés) -->
+						{#if !isLoggedIn || getUserType() === 'client'}
 							<div class="dropdown dropdown-end">
 								<div tabindex="0" role="button" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Panier">
 									<div class="relative">
@@ -140,22 +162,27 @@
 							</div>
 						{/if}
 						
-						<!-- Menu mobile -->
-						<div class="dropdown dropdown-end md:hidden">
-							<div tabindex="0" role="button" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Menu mobile">
-								<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
-									<path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-								</svg>
+						<!-- Menu mobile (masqué pour admin et dashboard créateur) -->
+						{#if !isLoggedIn || (getUserType() !== 'admin' && !$page.url.pathname.startsWith('/creator/dashboard'))}
+							<div class="dropdown dropdown-end md:hidden">
+								<div tabindex="0" role="button" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Menu mobile">
+									<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
+										<path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+									</svg>
+								</div>
+								<ul class="menu menu-sm dropdown-content header-dropdown rounded-2xl z-[1] mt-3 w-52 p-2">
+									<li><a href="/" class="rounded-xl {isActiveLink('/') ? 'bg-primary-30 text-primary' : ''}">Accueil</a></li>
+									<li><a href="/products/homme" class="rounded-xl {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : ''}">Homme</a></li>
+									<li><a href="/products/femme" class="rounded-xl {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : ''}">Femme</a></li>
+									{#if isLoggedIn && getUserType() === 'creator'}
+										<li><a href="/creator/dashboard" class="rounded-xl {isActiveLink('/creator/dashboard') ? 'bg-primary-30 text-primary' : ''}">Espace créateur</a></li>
+									{/if}
+									{#if isLoggedIn && getUserType() === 'admin'}
+										<li><a href="/admin" class="rounded-xl {isActiveLink('/admin') ? 'bg-primary-30 text-primary' : ''}">Administration</a></li>
+									{/if}
+								</ul>
 							</div>
-							<ul class="menu menu-sm dropdown-content header-dropdown rounded-2xl z-[1] mt-3 w-52 p-2">
-								<li><a href="/" class="rounded-xl {isActiveLink('/') ? 'bg-primary-30 text-primary' : ''}">Accueil</a></li>
-								<li><a href="/products/homme" class="rounded-xl {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : ''}">Homme</a></li>
-								<li><a href="/products/femme" class="rounded-xl {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : ''}">Femme</a></li>
-								{#if isLoggedIn && userType === 'creator'}
-									<li><a href="/creator/dashboard" class="rounded-xl {isActiveLink('/creator/dashboard') ? 'bg-primary-30 text-primary' : ''}">Espace créateur</a></li>
-								{/if}
-							</ul>
-						</div>
+						{/if}
 					</div>
 				</div>
 			</div>

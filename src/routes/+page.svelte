@@ -1,51 +1,28 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import CreationCard from '$lib/components/CreationCard.svelte';
 	
-	// Données de test pour les créations
-	const creations = [
-		{
-			id: '1',
-			name: 'Robe Élégante',
-			price: 89.99,
-			image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop',
-			creator: { name: 'Marie Dubois' }
-		},
-		{
-			id: '2',
-			name: 'Veste Vintage',
-			price: 125.50,
-			image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop',
-			creator: { name: 'Pierre Martin' }
-		},
-		{
-			id: '3',
-			name: 'Pantalon Moderne',
-			price: 75.00,
-			image: 'https://images.unsplash.com/photo-1506629905607-1b2b2b2b2b2b?w=400&h=400&fit=crop',
-			creator: { name: 'Sophie Laurent' }
-		},
-		{
-			id: '4',
-			name: 'Chemise Artisanale',
-			price: 95.00,
-			image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=400&fit=crop',
-			creator: { name: 'Thomas Moreau' }
-		},
-		{
-			id: '5',
-			name: 'Jupe Bohème',
-			price: 65.99,
-			image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=400&fit=crop',
-			creator: { name: 'Emma Rousseau' }
-		},
-		{
-			id: '6',
-			name: 'Blazer Sophistiqué',
-			price: 145.00,
-			image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop',
-			creator: { name: 'Lucas Bernard' }
+	let creations: any[] = [];
+	let isLoading = true;
+	let error = '';
+
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/products');
+			const data = await response.json();
+			
+			if (data.success) {
+				creations = data.products || [];
+			} else {
+				error = data.error || 'Erreur lors du chargement des produits';
+			}
+		} catch (err) {
+			error = 'Erreur de connexion';
+			console.error('Erreur lors du chargement des produits:', err);
+		} finally {
+			isLoading = false;
 		}
-	];
+	});
 </script>
 
 <svelte:head>
@@ -64,11 +41,28 @@
 			</p>
 		</div>
 		
-		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-			{#each creations as creation}
-				<CreationCard {creation} />
-			{/each}
-		</div>
+		{#if isLoading}
+			<div class="flex items-center justify-center py-12">
+				<div class="loading loading-spinner loading-lg"></div>
+			</div>
+		{:else if error}
+			<div class="alert alert-error">
+				<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+					<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+				</svg>
+				<span>{error}</span>
+			</div>
+		{:else if creations.length === 0}
+			<div class="text-center py-12">
+				<p class="text-lg text-base-content/70">Aucun produit disponible pour le moment.</p>
+			</div>
+		{:else}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+				{#each creations as creation}
+					<CreationCard {creation} />
+				{/each}
+			</div>
+		{/if}
 		
 		<div class="text-center">
 			<button class="btn btn-outline-modern btn-lg px-8">

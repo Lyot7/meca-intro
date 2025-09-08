@@ -5,14 +5,7 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { ProductService } from '$lib/application/services/ProductService.js';
-import { ProductRepository } from '$lib/infrastructure/repositories/ProductRepository.js';
-import { CreatorRepository } from '$lib/infrastructure/repositories/CreatorRepository.js';
-
-// Initialiser les services
-const productRepository = new ProductRepository();
-const creatorRepository = new CreatorRepository();
-const productService = new ProductService(productRepository, creatorRepository);
+import { mockProducts } from '$lib/infrastructure/mockData.js';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
@@ -24,31 +17,53 @@ export const GET: RequestHandler = async ({ url }) => {
 		const minPrice = url.searchParams.get('minPrice') ? parseFloat(url.searchParams.get('minPrice')!) : undefined;
 		const maxPrice = url.searchParams.get('maxPrice') ? parseFloat(url.searchParams.get('maxPrice')!) : undefined;
 
-		// Récupérer les produits
-		const result = await productService.getProducts({
-			gender,
-			page,
-			limit,
-			search,
-			minPrice,
-			maxPrice
-		});
+		// Filtrer les produits selon les paramètres
+		let filteredProducts = [...mockProducts];
 
-		if (!result.success) {
-			return json(
-				{ success: false, error: result.error },
-				{ status: 400 }
+		// Filtrer par genre
+		if (gender) {
+			filteredProducts = filteredProducts.filter(product => 
+				product.gender === gender || product.gender === 'unisex'
 			);
 		}
 
+		// Filtrer par prix
+		if (minPrice) {
+			filteredProducts = filteredProducts.filter(product => 
+				product.getMinPrice() >= minPrice
+			);
+		}
+
+		if (maxPrice) {
+			filteredProducts = filteredProducts.filter(product => 
+				product.getMaxPrice() <= maxPrice
+			);
+		}
+
+		// Filtrer par recherche
+		if (search) {
+			const searchLower = search.toLowerCase();
+			filteredProducts = filteredProducts.filter(product => 
+				product.name.toLowerCase().includes(searchLower) ||
+				product.description.toLowerCase().includes(searchLower)
+			);
+		}
+
+		// Pagination
+		const total = filteredProducts.length;
+		const totalPages = Math.ceil(total / limit);
+		const startIndex = (page - 1) * limit;
+		const endIndex = startIndex + limit;
+		const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
 		return json({
 			success: true,
-			products: result.products,
+			products: paginatedProducts,
 			pagination: {
-				total: result.total,
-				page: result.page,
-				limit: result.limit,
-				totalPages: result.totalPages
+				total,
+				page,
+				limit,
+				totalPages
 			}
 		});
 	} catch (error) {

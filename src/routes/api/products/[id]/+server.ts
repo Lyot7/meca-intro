@@ -5,14 +5,7 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { ProductService } from '$lib/application/services/ProductService.js';
-import { ProductRepository } from '$lib/infrastructure/repositories/ProductRepository.js';
-import { CreatorRepository } from '$lib/infrastructure/repositories/CreatorRepository.js';
-
-// Initialiser les services
-const productRepository = new ProductRepository();
-const creatorRepository = new CreatorRepository();
-const productService = new ProductService(productRepository, creatorRepository);
+import { mockProducts } from '$lib/infrastructure/mockData.js';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -25,19 +18,19 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
-		// Récupérer le produit
-		const result = await productService.getProduct(productId);
+		// Trouver le produit
+		const product = mockProducts.find(p => p.id === productId);
 
-		if (!result.success) {
+		if (!product) {
 			return json(
-				{ success: false, error: result.error },
-				{ status: result.error === 'Produit non trouvé' ? 404 : 400 }
+				{ success: false, error: 'Produit non trouvé' },
+				{ status: 404 }
 			);
 		}
 
 		return json({
 			success: true,
-			product: result.product
+			product
 		});
 	} catch (error) {
 		console.error('Erreur lors de la récupération du produit:', error);

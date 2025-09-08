@@ -6,13 +6,10 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
+import { env } from '../config/env.js';
 
 // Configuration de la connexion à la base de données
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-	throw new Error('DATABASE_URL environment variable is required');
-}
+const connectionString = env.DATABASE_URL;
 
 // Créer la connexion PostgreSQL
 const client = postgres(connectionString, {

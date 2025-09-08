@@ -1,212 +1,201 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	
-	// Données mockées pour l'exemple
+	import { authStore } from '$lib/presentation/stores/authStore.js';
+
+	let user: any = null;
+	let products: any[] = [];
 	let stats = {
-		totalSales: 1250,
-		totalOrders: 23,
-		totalProducts: 8,
-		monthlyRevenue: 450
+		totalProducts: 0,
+		totalSales: 0,
+		totalRevenue: 0
 	};
+	let isLoading = true;
 
-	let recentOrders = [
-		{ id: '#001', product: 'T-shirt Vintage', customer: 'Marie D.', amount: 35, status: 'En cours' },
-		{ id: '#002', product: 'Sac en Cuir', customer: 'Pierre L.', amount: 89, status: 'Expédié' },
-		{ id: '#003', product: 'Bijou Artisanal', customer: 'Sophie M.', amount: 25, status: 'Livré' }
-	];
+	onMount(async () => {
+		// Vérifier si l'utilisateur est connecté
+		const response = await fetch('/api/auth/me');
+		const data = await response.json();
 
-	let recentProducts = [
-		{ id: 1, name: 'T-shirt Vintage', price: 35, stock: 12, views: 156 },
-		{ id: 2, name: 'Sac en Cuir', price: 89, stock: 3, views: 89 },
-		{ id: 3, name: 'Bijou Artisanal', price: 25, stock: 8, views: 234 }
-	];
+		if (!data.success) {
+			goto('/auth');
+			return;
+		}
+
+		user = data.user;
+		
+		// Vérifier que c'est un créateur
+		if (user.email !== 'createur@kpsull.com') {
+			goto('/');
+			return;
+		}
+
+		// Charger les données du créateur
+		await loadCreatorData();
+		
+		isLoading = false;
+	});
+
+	async function loadCreatorData() {
+		try {
+			// Charger les produits du créateur
+			const response = await fetch('/api/products');
+			const data = await response.json();
+			
+			if (data.success) {
+				products = data.products || [];
+				stats.totalProducts = products.length;
+			}
+		} catch (error) {
+			console.error('Erreur lors du chargement des données:', error);
+		}
+	}
+
+	async function logout() {
+		try {
+			await fetch('/api/auth/logout', { method: 'POST' });
+			authStore.logout();
+			goto('/');
+		} catch (error) {
+			console.error('Erreur lors de la déconnexion:', error);
+		}
+	}
+
+	function formatDate(date: string) {
+		return new Date(date).toLocaleDateString('fr-FR');
+	}
 </script>
 
 <svelte:head>
-	<title>Espace Créateur - KPSULL</title>
+	<title>Tableau de bord Créateur - KPSULL</title>
 </svelte:head>
 
-<div class="min-h-screen bg-base-200">
-	<!-- Header -->
-	<div class="bg-base-100 shadow-sm border-b border-base-300">
-		<div class="max-w-6xl mx-auto px-4 py-6">
-			<div class="flex items-center justify-between">
-				<div>
-					<h1 class="text-4xl font-bold text-gradient">Espace Créateur</h1>
-					<p class="text-base-content/70 mt-1">Bienvenue dans votre back office</p>
-				</div>
-				<div class="flex items-center space-x-4">
-					<a href="/creator/products" class="btn btn-outline-modern">
-						<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-							<path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"></path>
-						</svg>
-						Mes créations
-					</a>
-					<a href="/creator/orders" class="btn btn-outline-modern">
-						<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-							<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-						</svg>
-						Commandes
-					</a>
-					<button class="btn btn-outline-modern" on:click={() => goto('/')}>
-						<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-							<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-						</svg>
-						Retour au site
-					</button>
-				</div>
-			</div>
+<div class="min-h-screen bg-base-100">
+
+
+	{#if isLoading}
+		<div class="flex items-center justify-center min-h-96">
+			<div class="loading loading-spinner loading-lg"></div>
 		</div>
-	</div>
+	{:else}
+		<main class="max-w-7xl mx-auto p-6">
+			<!-- Navigation -->
+			<div class="tabs tabs-boxed mb-8">
+				<a href="/creator/dashboard" class="tab tab-active">Tableau de bord</a>
+				<a href="/creator/products" class="tab">Mes produits</a>
+				<a href="/creator/orders" class="tab">Commandes</a>
+				<a href="/creator/profile" class="tab">Mon profil</a>
+			</div>
 
-	<div class="max-w-6xl mx-auto px-4 py-8">
-		<!-- Statistiques -->
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between">
+			<!-- Statistiques -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+				<div class="stat bg-base-200 rounded-lg">
+					<div class="stat-figure text-primary">
+						<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-4h4v4H8z" clip-rule="evenodd"></path>
+						</svg>
+					</div>
+					<div class="stat-title">Produits</div>
+					<div class="stat-value text-primary">{stats.totalProducts}</div>
+					<div class="stat-desc">Produits publiés</div>
+				</div>
+
+				<div class="stat bg-base-200 rounded-lg">
+					<div class="stat-figure text-secondary">
+						<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+						</svg>
+					</div>
+					<div class="stat-title">Ventes</div>
+					<div class="stat-value text-secondary">{stats.totalSales}</div>
+					<div class="stat-desc">Commandes reçues</div>
+				</div>
+
+				<div class="stat bg-base-200 rounded-lg">
+					<div class="stat-figure text-accent">
+						<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+						</svg>
+					</div>
+					<div class="stat-title">Revenus</div>
+					<div class="stat-value text-accent">{stats.totalRevenue}€</div>
+					<div class="stat-desc">Revenus totaux</div>
+				</div>
+			</div>
+
+			<!-- Informations de l'abonnement -->
+			<div class="card bg-base-200 mb-8">
+				<div class="card-body">
+					<h2 class="card-title">Informations d'abonnement</h2>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
-							<p class="text-sm text-base-content/70">Chiffre d'affaires</p>
-							<p class="text-2xl font-bold text-primary">{stats.totalSales}€</p>
+							<p class="text-sm text-base-content/70">Type d'abonnement</p>
+							<p class="font-semibold capitalize">{user?.subscription?.type}</p>
 						</div>
-						<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-							<svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-								<path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
-								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
-							</svg>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm text-base-content/70">Commandes</p>
-							<p class="text-2xl font-bold text-primary">{stats.totalOrders}</p>
+							<p class="text-sm text-base-content/70">Statut</p>
+							<span class="badge badge-{user?.subscription?.isActive ? 'success' : 'error'}">
+								{user?.subscription?.isActive ? 'Actif' : 'Inactif'}
+							</span>
 						</div>
-						<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-							<svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-								<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-							</svg>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm text-base-content/70">Produits</p>
-							<p class="text-2xl font-bold text-primary">{stats.totalProducts}</p>
+							<p class="text-sm text-base-content/70">Expire le</p>
+							<p class="font-semibold">{formatDate(user?.subscription?.expiresAt)}</p>
 						</div>
-						<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-							<svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-								<path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"></path>
-							</svg>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm text-base-content/70">Ce mois</p>
-							<p class="text-2xl font-bold text-primary">{stats.monthlyRevenue}€</p>
-						</div>
-						<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-							<svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-								<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-							</svg>
+							<p class="text-sm text-base-content/70">Prix</p>
+							<p class="font-semibold">{user?.subscription?.type === 'monthly' ? '100€/mois' : '1000€/an'}</p>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-			<!-- Commandes récentes -->
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between mb-4">
-						<h3 class="text-xl font-bold">Commandes récentes</h3>
-						<a href="/creator/orders" class="link link-primary text-sm">Voir tout</a>
-					</div>
-					<div class="space-y-4">
-						{#each recentOrders as order}
-							<div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-								<div>
-									<p class="font-medium">{order.product}</p>
-									<p class="text-sm text-base-content/70">{order.customer} • {order.id}</p>
-								</div>
-								<div class="text-right">
-									<p class="font-bold text-primary">{order.amount}€</p>
-									<span class="badge badge-sm {order.status === 'Livré' ? 'badge-success' : order.status === 'Expédié' ? 'badge-warning' : 'badge-info'}">{order.status}</span>
-								</div>
-							</div>
-						{/each}
+			<!-- Actions rapides -->
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+				<div class="card bg-base-200">
+					<div class="card-body">
+						<h2 class="card-title">Actions rapides</h2>
+						<div class="card-actions">
+							<button class="btn btn-primary">
+								<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+									<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+								</svg>
+								Ajouter un produit
+							</button>
+							<button class="btn btn-outline">
+								<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+									<path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+								</svg>
+								Voir les commandes
+							</button>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<!-- Produits récents -->
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between mb-4">
-						<h3 class="text-xl font-bold">Mes créations</h3>
-						<a href="/creator/products" class="link link-primary text-sm">Voir tout</a>
-					</div>
-					<div class="space-y-4">
-						{#each recentProducts as product}
-							<div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-								<div>
-									<p class="font-medium">{product.name}</p>
-									<p class="text-sm text-base-content/70">{product.views} vues • Stock: {product.stock}</p>
-								</div>
-								<div class="text-right">
-									<p class="font-bold text-primary">{product.price}€</p>
-									<span class="badge badge-sm {product.stock > 5 ? 'badge-success' : product.stock > 0 ? 'badge-warning' : 'badge-error'}">
-										{product.stock > 5 ? 'En stock' : product.stock > 0 ? 'Stock faible' : 'Rupture'}
+				<div class="card bg-base-200">
+					<div class="card-body">
+						<h2 class="card-title">Mes produits récents</h2>
+						<div class="space-y-3">
+							{#each products.slice(0, 3) as product}
+								<div class="flex items-center gap-3 p-2 bg-base-100 rounded">
+									<div class="avatar">
+										<div class="w-10 h-10 rounded">
+											<img src={product.getFirstImage?.() || 'https://via.placeholder.com/40'} alt={product.name} />
+										</div>
+									</div>
+									<div class="flex-1">
+										<h3 class="font-semibold text-sm">{product.name}</h3>
+										<p class="text-xs text-base-content/70">{product.getMinPrice?.()}€ - {product.getMaxPrice?.()}€</p>
+									</div>
+									<span class="badge badge-{product.status === 'available' ? 'success' : 'error'} badge-sm">
+										{product.status}
 									</span>
 								</div>
-							</div>
-						{/each}
+							{/each}
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-
-		<!-- Actions rapides -->
-		<div class="mt-8">
-			<div class="card bg-base-100 shadow-xl">
-				<div class="card-body p-6">
-					<h3 class="text-xl font-bold mb-4">Actions rapides</h3>
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<a href="/creator/products/new" class="btn btn-modern">
-							<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-								<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-							</svg>
-							Nouvelle création
-						</a>
-						<a href="/creator/profile" class="btn btn-outline-modern">
-							<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-								<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-							</svg>
-							Mon profil
-						</a>
-						<a href="/creator/subscription" class="btn btn-outline-modern">
-							<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-								<path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"></path>
-							</svg>
-							Mon abonnement
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+		</main>
+	{/if}
 </div>

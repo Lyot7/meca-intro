@@ -5,14 +5,12 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { AuthService } from '$lib/application/services/AuthService.js';
-import { CreatorRepository } from '$lib/infrastructure/repositories/CreatorRepository.js';
+import { MockAuthService } from '$lib/infrastructure/auth/mockAuthService.js';
 
-// Initialiser les services
-const creatorRepository = new CreatorRepository();
-const authService = new AuthService(creatorRepository);
+// Initialiser le service d'authentification mock
+const authService = new MockAuthService();
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const body = await request.json();
 		const { email, password } = body;
@@ -25,31 +23,34 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		// Authentifier le créateur
-		const result = await authService.login({ email, password });
+		// Authentifier l'utilisateur
+		const authResult = await authService.authenticateUser(email, password);
 
-		if (!result.success) {
+		if (!authResult.success) {
 			return json(
-				{ success: false, error: result.error },
+				{ success: false, error: authResult.error },
 				{ status: 401 }
 			);
 		}
 
-		// TODO: Créer une session avec Lucia Auth
-		// const session = await auth.createSession(result.user.id, {});
+		// Créer une session
+		const sessionId = `session_${authResult.user.id}_${Date.now()}`;
+		
+		// Définir le cookie de session
+		cookies.set('auth_session', sessionId, {
+			path: '/',
+			maxAge: 60 * 60 * 24 * 7, // 7 jours
+			httpOnly: true,
+			secure: false, // true en production
+			sameSite: 'lax'
+		});
 
 		return json({
 			success: true,
-			user: {
-				id: result.user!.id,
-				name: result.user!.name,
-				email: result.user!.email,
-				status: result.user!.status,
-				subscription: result.user!.subscription
-			}
+			user: authResult.user
 		});
 	} catch (error) {
-		console.error('Erreur lors de la connexion du créateur:', error);
+		console.error('Erreur lors de la connexion:', error);
 		return json(
 			{ success: false, error: 'Erreur interne du serveur' },
 			{ status: 500 }

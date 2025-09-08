@@ -243,10 +243,9 @@
 						name: creation.name,
 						price: creation.price,
 						image: creation.image,
-						creator: { name: creation.creator }
+						creator: { name: creation.creator },
+						creatorId: creation.creatorSlug
 					}}
-					href="/products/{creation.id}"
-					creatorHref="/creators/{creation.creatorSlug}"
 				/>
 			{/each}
 		</div>

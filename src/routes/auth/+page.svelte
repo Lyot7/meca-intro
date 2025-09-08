@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { authStore } from '$lib/presentation/stores/authStore.js';
 	
 	let email = '';
 	let password = '';
@@ -23,8 +24,8 @@
 		error = '';
 
 		try {
-			// D'abord, on essaie de se connecter en tant que client
-			let response = await fetch('/api/auth/client/login', {
+			// Utiliser le système d'authentification unifié
+			const response = await fetch('/api/auth/creator/login', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -32,30 +33,23 @@
 				body: JSON.stringify({ email, password })
 			});
 
-			if (response.ok) {
-				// C'est un client, redirection vers l'accueil
-				goto('/');
-				return;
-			}
-
-			// Si ce n'est pas un client, on essaie en tant que créateur
-			response = await fetch('/api/auth/creator/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ email, password })
-			});
-
-			if (response.ok) {
-				// C'est un créateur, redirection vers l'espace créateur
-				goto('/creator/dashboard');
-				return;
-			}
-
-			// Si aucun des deux ne fonctionne
 			const data = await response.json();
-			error = data.message || 'Email ou mot de passe incorrect';
+
+			if (response.ok) {
+				// Mettre à jour le store d'authentification
+				authStore.setUser(data.user);
+				
+				// Rediriger selon le type d'utilisateur
+				if (data.user.email === 'admin@kpsull.com') {
+					goto('/admin');
+				} else if (data.user.email === 'createur@kpsull.com') {
+					goto('/creator/dashboard');
+				} else {
+					goto('/');
+				}
+			} else {
+				error = data.error || 'Email ou mot de passe incorrect';
+			}
 		} catch (err) {
 			error = 'Erreur de connexion';
 		} finally {
@@ -66,6 +60,7 @@
 	function togglePassword() {
 		showPassword = !showPassword;
 	}
+
 </script>
 
 <svelte:head>
