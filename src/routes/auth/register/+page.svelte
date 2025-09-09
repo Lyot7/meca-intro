@@ -13,12 +13,8 @@
 	<title>Inscription - KPSULL</title>
 </svelte:head>
 
-<!-- Background avec gradient animé -->
-<div class="auth-background">
-	<div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10"></div>
-	
-	<!-- Container principal -->
-	<div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 h-full">
+<!-- Container principal -->
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
 		<div class="w-full max-w-6xl">
 			<!-- Header avec animation -->
 			<div class="text-center mb-12" class:animate-fade-in={mounted}>
@@ -164,6 +160,5 @@
 					<a href="/privacy" class="link link-primary hover:underline">politique de confidentialité</a>
 				</p>
 			</div>
-		</div>
 	</div>
 </div>

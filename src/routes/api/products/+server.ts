@@ -6,13 +6,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { db } from '$lib/infrastructure/database/config.js';
-import { products, productVariants, creators } from '$lib/infrastructure/database/schema.js';
-import { eq, and, gte, lte, ilike, or, desc } from 'drizzle-orm';
+import { products, productVariants, users } from '$lib/infrastructure/database/schema.js';
+import { eq, and, ilike, or, desc } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
 		// Récupérer les paramètres de requête
-		const gender = url.searchParams.get('gender') as any;
+		const gender = url.searchParams.get('gender') as 'male' | 'female' | 'unisex' | null;
 		const creatorId = url.searchParams.get('creatorId') || undefined;
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '12');
@@ -52,7 +52,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		conditions.push(eq(products.status, 'available'));
 
 		// Récupérer les produits avec les créateurs
-		let query = db
+		const baseQuery = db
 			.select({
 				id: products.id,
 				name: products.name,
@@ -60,33 +60,32 @@ export const GET: RequestHandler = async ({ url }) => {
 				gender: products.gender,
 				status: products.status,
 				tags: products.tags,
+				price: products.price,
+				featuredImage: products.featuredImage,
 				createdAt: products.createdAt,
 				updatedAt: products.updatedAt,
 				creator: {
-					id: creators.id,
-					name: creators.name,
-					description: creators.description,
-					profileImage: creators.profileImage,
-					website: creators.website,
-					socialMedia: creators.socialMedia
+					id: users.id,
+					name: users.name,
+					description: users.description,
+					profileImage: users.profileImage,
+					website: users.website,
+					socialMedia: users.socialMedia
 				}
 			})
 			.from(products)
-			.leftJoin(creators, eq(products.creatorId, creators.id));
+			.leftJoin(users, eq(products.creatorId, users.id));
 
-		// Appliquer les conditions
-		if (conditions.length > 0) {
-			query = query.where(and(...conditions));
-		}
-
-		// Trier par date de création (plus récents en premier)
-		query = query.orderBy(desc(products.createdAt));
+		// Construire la requête finale avec conditions et tri
+		const finalQuery = conditions.length > 0 
+			? baseQuery.where(and(...conditions)).orderBy(desc(products.createdAt))
+			: baseQuery.orderBy(desc(products.createdAt));
 
 		// Pagination
 		const offset = (page - 1) * limit;
-		const productsList = await query.limit(limit).offset(offset);
+		const productsList = await finalQuery.limit(limit).offset(offset);
 
-		// Pour chaque produit, récupérer les variantes et calculer les prix
+		// Pour chaque produit, récupérer les variantes
 		const productsWithVariants = await Promise.all(
 			productsList.map(async (product) => {
 				const variants = await db
@@ -95,29 +94,22 @@ export const GET: RequestHandler = async ({ url }) => {
 						size: productVariants.size,
 						color: productVariants.color,
 						stock: productVariants.stock,
-						price: productVariants.price,
 						images: productVariants.images
 					})
 					.from(productVariants)
 					.where(eq(productVariants.productId, product.id));
 
-				// Calculer les prix min/max
-				const prices = variants.map(v => parseFloat(v.price));
-				const priceRange = prices.length > 0 ? {
-					min: Math.min(...prices),
-					max: Math.max(...prices)
-				} : { min: 0, max: 0 };
-
 				// Filtrer par prix si spécifié
-				if (minPrice && priceRange.max < minPrice) return null;
-				if (maxPrice && priceRange.min > maxPrice) return null;
+				const productPrice = parseFloat(product.price);
+				if (minPrice && productPrice < minPrice) return null;
+				if (maxPrice && productPrice > maxPrice) return null;
 
 				// Extraire les tailles et couleurs uniques
 				const sizes = [...new Set(variants.map(v => v.size).filter(Boolean))];
 				const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
 
-				// Prendre la première image disponible
-				const images = variants.length > 0 ? variants[0].images || [] : [];
+				// Utiliser l'image featured ou la première image des variantes
+				const images = product.featuredImage ? [product.featuredImage] : (variants.length > 0 ? variants[0].images || [] : []);
 
 				return {
 					id: product.id,
@@ -130,7 +122,7 @@ export const GET: RequestHandler = async ({ url }) => {
 					variants: variants,
 					sizes: sizes,
 					colors: colors,
-					priceRange: priceRange,
+					price: productPrice,
 					images: images,
 					createdAt: product.createdAt,
 					updatedAt: product.updatedAt
@@ -142,16 +134,16 @@ export const GET: RequestHandler = async ({ url }) => {
 		const filteredProducts = productsWithVariants.filter(Boolean);
 
 		// Compter le total pour la pagination
-		const totalQuery = db
+		const baseTotalQuery = db
 			.select({ count: products.id })
 			.from(products)
-			.leftJoin(creators, eq(products.creatorId, creators.id));
+			.leftJoin(users, eq(products.creatorId, users.id));
 
-		if (conditions.length > 0) {
-			totalQuery.where(and(...conditions));
-		}
+		const finalTotalQuery = conditions.length > 0 
+			? baseTotalQuery.where(and(...conditions))
+			: baseTotalQuery;
 
-		const totalResult = await totalQuery;
+		const totalResult = await finalTotalQuery;
 		const total = totalResult.length;
 
 		return json({

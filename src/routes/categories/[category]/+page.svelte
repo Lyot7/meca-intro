@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import CreationCard from '$lib/components/CreationCard.svelte';
 	
 	// État du filtre actuel
@@ -8,9 +9,53 @@
 	let isLoading = true;
 	let error = '';
 
+	// Récupérer la catégorie depuis l'URL
+	$: category = $page.params.category;
+	
+	// Configuration des catégories
+	const categoryConfig = {
+		homme: {
+			title: 'Homme',
+			description: 'Découvrez notre sélection de créations uniques pour homme, alliant style et confort pour toutes les occasions.',
+			gender: 'male',
+			filters: ['tous', 'vêtements', 'accessoires', 'chaussures']
+		},
+		femme: {
+			title: 'Femme',
+			description: 'Découvrez notre sélection de créations uniques pour femme, alliant élégance et originalité pour toutes les occasions.',
+			gender: 'female',
+			filters: ['tous', 'vêtements', 'accessoires', 'bijoux', 'chaussures']
+		}
+	};
+
+	// Configuration actuelle basée sur la catégorie
+	$: currentConfig = categoryConfig[category as keyof typeof categoryConfig] || categoryConfig.homme;
+
 	onMount(async () => {
+		await loadProducts();
+	});
+
+	// Recharger les produits quand la catégorie change
+	$: if (category) {
+		loadProducts();
+	}
+
+	async function loadProducts() {
+		isLoading = true;
+		error = '';
+		
 		try {
-			const response = await fetch('/api/products?gender=male');
+			// Construire l'URL avec le genre approprié
+			let apiUrl = '/api/products';
+			if (currentConfig.gender === 'male') {
+				apiUrl += '?gender=male';
+			} else if (currentConfig.gender === 'female') {
+				apiUrl += '?gender=female';
+			} else if (currentConfig.gender === 'unisex') {
+				apiUrl += '?gender=unisex';
+			}
+
+			const response = await fetch(apiUrl);
 			const data = await response.json();
 			
 			if (data.success) {
@@ -24,7 +69,7 @@
 		} finally {
 			isLoading = false;
 		}
-	});
+	}
 
 	// Produits filtrés selon la catégorie sélectionnée
 	$: filteredProducts = selectedFilter === 'tous' 
@@ -44,18 +89,17 @@
 </script>
 
 <svelte:head>
-	<title>Produits Homme - KPSULL</title>
-	<meta name="description" content="Découvrez nos créations pour homme" />
+	<title>Produits {currentConfig.title} - KPSULL</title>
+	<meta name="description" content="Découvrez nos créations pour {currentConfig.title.toLowerCase()}" />
 </svelte:head>
 
 <!-- Hero Section -->
 <section class="hero bg-gradient-to-r from-primary to-secondary text-primary-content">
 	<div class="hero-content text-center">
-		<div class="max-w-4xl">
-			<h1 class="text-5xl font-bold mb-4">Homme</h1>
+		<div class="px-8">
+			<h1 class="text-5xl font-bold mb-4">{currentConfig.title}</h1>
 			<p class="text-xl">
-				Découvrez notre sélection de créations uniques pour homme, 
-				alliant style et confort pour toutes les occasions.
+				{currentConfig.description}
 			</p>
 		</div>
 	</div>
@@ -65,24 +109,14 @@
 <section class="py-8 bg-base-200">
 	<div class="max-w-6xl mx-auto px-4">
 		<div class="flex flex-wrap gap-2">
-			<button 
-				class="badge badge-lg {selectedFilter === 'tous' ? 'badge-primary' : 'badge-outline'}"
-				on:click={() => setFilter('tous')}
-			>
-				Tous
-			</button>
-			<button 
-				class="badge badge-lg {selectedFilter === 'vêtements' ? 'badge-primary' : 'badge-outline'}"
-				on:click={() => setFilter('vêtements')}
-			>
-				Vêtements
-			</button>
-			<button 
-				class="badge badge-lg {selectedFilter === 'accessoires' ? 'badge-primary' : 'badge-outline'}"
-				on:click={() => setFilter('accessoires')}
-			>
-				Accessoires
-			</button>
+			{#each currentConfig.filters as filter}
+				<button 
+					class="badge badge-lg {selectedFilter === filter ? 'badge-primary' : 'badge-outline'}"
+					on:click={() => setFilter(filter)}
+				>
+					{filter.charAt(0).toUpperCase() + filter.slice(1)}
+				</button>
+			{/each}
 		</div>
 	</div>
 </section>

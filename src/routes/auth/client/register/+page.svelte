@@ -88,12 +88,8 @@
 	<title>Inscription Client - KPSULL</title>
 </svelte:head>
 
-<!-- Background avec gradient animé -->
-<div class="auth-background">
-	<div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10"></div>
-	
-	<!-- Container principal -->
-	<div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8 h-full">
+<!-- Container principal -->
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
 		<div class="w-full max-w-md">
 			<!-- Header avec animation -->
 			<div class="text-center mb-12" class:animate-fade-in={mounted}>
@@ -316,6 +312,5 @@
 					← Retour au choix du profil
 				</a>
 			</div>
-		</div>
 	</div>
 </div>

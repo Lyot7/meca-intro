@@ -6,7 +6,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { db } from '$lib/infrastructure/database/config.js';
-import { products, productVariants, creators } from '$lib/infrastructure/database/schema.js';
+import { products, productVariants, users } from '$lib/infrastructure/database/schema.js';
 import { eq } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -29,19 +29,21 @@ export const GET: RequestHandler = async ({ params }) => {
 				gender: products.gender,
 				status: products.status,
 				tags: products.tags,
+				price: products.price,
+				featuredImage: products.featuredImage,
 				createdAt: products.createdAt,
 				updatedAt: products.updatedAt,
 				creator: {
-					id: creators.id,
-					name: creators.name,
-					description: creators.description,
-					profileImage: creators.profileImage,
-					website: creators.website,
-					socialMedia: creators.socialMedia
+					id: users.id,
+					name: users.name,
+					description: users.description,
+					profileImage: users.profileImage,
+					website: users.website,
+					socialMedia: users.socialMedia
 				}
 			})
 			.from(products)
-			.leftJoin(creators, eq(products.creatorId, creators.id))
+			.leftJoin(users, eq(products.creatorId, users.id))
 			.where(eq(products.id, productId));
 
 		if (!product) {
@@ -58,7 +60,6 @@ export const GET: RequestHandler = async ({ params }) => {
 				size: productVariants.size,
 				color: productVariants.color,
 				stock: productVariants.stock,
-				price: productVariants.price,
 				images: productVariants.images
 			})
 			.from(productVariants)
@@ -72,18 +73,14 @@ export const GET: RequestHandler = async ({ params }) => {
 			gender: product.gender,
 			status: product.status,
 			tags: product.tags || [],
+			price: parseFloat(product.price),
 			creator: product.creator,
 			variants: variants,
 			// Extraire les tailles et couleurs uniques
 			sizes: [...new Set(variants.map(v => v.size).filter(Boolean))],
 			colors: [...new Set(variants.map(v => v.color).filter(Boolean))],
-			// Prix minimum et maximum
-			priceRange: variants.length > 0 ? {
-				min: Math.min(...variants.map(v => parseFloat(v.price))),
-				max: Math.max(...variants.map(v => parseFloat(v.price)))
-			} : { min: 0, max: 0 },
-			// Images (prendre la première image de chaque variante)
-			images: variants.length > 0 ? variants[0].images || [] : []
+			// Images (utiliser featuredImage en priorité, sinon première variante)
+			images: product.featuredImage ? [product.featuredImage] : (variants.length > 0 ? variants[0].images || [] : [])
 		};
 
 		return json({

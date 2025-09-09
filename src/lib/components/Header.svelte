@@ -11,6 +11,13 @@
 	let user: any = null;
 	let cartCount: number = 0;
 	
+	// État du header pour le scroll
+	let isHeaderVisible: boolean = true;
+	let lastScrollY: number = 0;
+	
+	// État des menus
+	let isProfileMenuOpen: boolean = false;
+	
 	// Fonction pour vérifier l'état de connexion
 	async function checkAuth(): Promise<void> {
 		try {
@@ -35,11 +42,9 @@
 	}
 	
 	// Fonction pour déterminer le type d'utilisateur
-	function getUserType(): 'admin' | 'creator' | 'client' {
+	function getUserType(): 'creator' | 'client' {
 		if (!user) return 'client';
-		if (user.email === 'admin@kpsull.com') return 'admin';
-		if (user.email === 'createur@kpsull.com') return 'creator';
-		return 'client';
+		return user.role || 'client';
 	}
 	
 	// Vérifier l'auth au chargement
@@ -52,8 +57,14 @@
 			user = authState.user;
 		});
 		
-		// Nettoyer l'abonnement
-		return unsubscribe;
+		// Ajouter l'écouteur de scroll
+		window.addEventListener('scroll', handleScroll, { passive: true });
+		
+		// Nettoyer les abonnements
+		return () => {
+			unsubscribe();
+			window.removeEventListener('scroll', handleScroll);
+		};
 	});
 	
 	async function handleLogout(): Promise<void> {
@@ -68,13 +79,34 @@
 		goto('/');
 	}
 	
-	// Fonction pour déterminer si un lien est actif
-	function isActiveLink(path: string): boolean {
-		return $page.url.pathname === path;
+	// Fonction pour gérer le scroll
+	function handleScroll(): void {
+		const currentScrollY = window.scrollY;
+		const scrollThreshold = 100; // Seuil pour déclencher l'animation
+		
+		// Si on scroll vers le bas et qu'on dépasse le seuil
+		if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+			isHeaderVisible = false;
+		}
+		// Si on scroll vers le haut
+		else if (currentScrollY < lastScrollY) {
+			isHeaderVisible = true;
+		}
+		
+		lastScrollY = currentScrollY;
+	}
+	
+	// Fonctions pour gérer les menus
+	function toggleProfileMenu(): void {
+		isProfileMenuOpen = !isProfileMenuOpen;
+	}
+	
+	function closeMenus(): void {
+		isProfileMenuOpen = false;
 	}
 </script>
 
-<header class="w-full sticky top-0 z-50">
+<header class="w-full sticky top-0 z-50 transition-transform duration-300 ease-in-out" class:translate-y-[-100%]={!isHeaderVisible}>
 	<div class="container mx-auto px-6 py-4">
 		<div class="header-glass rounded-2xl px-8 py-4">
 			<div class="flex items-center justify-between">
@@ -88,66 +120,9 @@
 					</a>
 				</div>
 
-				<!-- Navigation centrale -->
-				<nav class="hidden md:flex items-center space-x-1">
-					{#if !isLoggedIn}
-						<!-- Navigation pour les utilisateurs non connectés -->
-						<a href="/" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Accueil
-						</a>
-						<a href="/products/homme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/homme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Homme
-						</a>
-						<a href="/products/femme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/femme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Femme
-						</a>
-					{:else if getUserType() === 'admin'}
-						<!-- Navigation pour les administrateurs -->
-						<a href="/admin" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/admin') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/admin') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Tableau de bord
-						</a>
-						<a href="/admin/creators" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/admin/creators') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/admin/creators') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Créateurs
-						</a>
-						<a href="/admin/orders" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/admin/orders') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/admin/orders') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Commandes
-						</a>
-						<a href="/admin/products" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/admin/products') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/admin/products') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Produits
-						</a>
-					{:else if getUserType() === 'creator'}
-						<!-- Navigation pour les créateurs (sans "Mon profil") -->
-						<a href="/creator/dashboard" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/creator/dashboard') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/creator/dashboard') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Tableau de bord
-						</a>
-						<a href="/creator/products" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/creator/products') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/creator/products') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Mes produits
-						</a>
-						<a href="/creator/orders" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/creator/orders') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/creator/orders') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Commandes
-						</a>
-					{:else}
-						<!-- Navigation pour les clients connectés -->
-						<a href="/" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Accueil
-						</a>
-						<a href="/products/homme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/homme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Homme
-						</a>
-						<a href="/products/femme" class="px-4 py-2 rounded-xl text-sm font-medium uppercase tracking-wide transition-all duration-200 {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" style="color: {isActiveLink('/products/femme') ? 'var(--color-primary)' : 'var(--color-text-muted)'};">
-							Femme
-						</a>
-					{/if}
-				</nav>
-			
 				<!-- Actions droite -->
 				<div class="flex items-center space-x-3">
-					{#if isLoggedIn}
-						<!-- Bouton déconnexion -->
-						<button on:click={handleLogout} class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg whitespace-nowrap" style="background-color: var(--color-primary); color: white;">
-							Déconnexion
-						</button>
-					{:else}
+					{#if !isLoggedIn}
 						<!-- Se connecter (bouton principal orange) -->
 						<a href="/auth" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg whitespace-nowrap" style="background-color: var(--color-primary); color: white;">
 							Se connecter
@@ -159,13 +134,33 @@
 						<ThemeToggle />
 					</div>
 					
-					<!-- Icône Mon profil (uniquement si connecté) -->
+					<!-- Menu profil (uniquement si connecté) -->
 					{#if isLoggedIn}
-						<a href="/profile" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Mon profil">
-							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
-								<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-							</svg>
-						</a>
+						<div class="relative">
+							<button on:click={toggleProfileMenu} class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Menu profil">
+								<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
+									<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+								</svg>
+							</button>
+							
+							<!-- Menu profil en position absolue -->
+							{#if isProfileMenuOpen}
+								<div class="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-50">
+									<a href="/profile" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+										<svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
+											<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+										</svg>
+										Modifier le compte
+									</a>
+									<button on:click={handleLogout} class="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+										<svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
+											<path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
+										</svg>
+										Se déconnecter
+									</button>
+								</div>
+							{/if}
+						</div>
 					{/if}
 					
 					<!-- Panier (seulement pour les clients non connectés ou clients connectés) -->
@@ -183,44 +178,23 @@
 							</div>
 						</div>
 					{/if}
-					
-					<!-- Menu mobile -->
-					<div class="dropdown dropdown-end md:hidden">
-						<div tabindex="0" role="button" class="w-10 h-10 header-button rounded-xl flex items-center justify-center shadow-lg" aria-label="Menu mobile">
-							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" style="color: var(--color-text);">
-								<path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-							</svg>
-						</div>
-						<ul class="menu menu-sm dropdown-content header-dropdown rounded-2xl z-[1] mt-3 w-52 p-2">
-							{#if !isLoggedIn}
-								<!-- Menu pour utilisateurs non connectés -->
-								<li><a href="/" class="rounded-xl {isActiveLink('/') ? 'bg-primary-30 text-primary' : ''}">Accueil</a></li>
-								<li><a href="/products/homme" class="rounded-xl {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : ''}">Homme</a></li>
-								<li><a href="/products/femme" class="rounded-xl {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : ''}">Femme</a></li>
-							{:else if getUserType() === 'admin'}
-								<!-- Menu pour administrateurs -->
-								<li><a href="/admin" class="rounded-xl {isActiveLink('/admin') ? 'bg-primary-30 text-primary' : ''}">Tableau de bord</a></li>
-								<li><a href="/admin/creators" class="rounded-xl {isActiveLink('/admin/creators') ? 'bg-primary-30 text-primary' : ''}">Créateurs</a></li>
-								<li><a href="/admin/orders" class="rounded-xl {isActiveLink('/admin/orders') ? 'bg-primary-30 text-primary' : ''}">Commandes</a></li>
-								<li><a href="/admin/products" class="rounded-xl {isActiveLink('/admin/products') ? 'bg-primary-30 text-primary' : ''}">Produits</a></li>
-							{:else if getUserType() === 'creator'}
-								<!-- Menu pour créateurs (sans "Mon profil") -->
-								<li><a href="/creator/dashboard" class="rounded-xl {isActiveLink('/creator/dashboard') ? 'bg-primary-30 text-primary' : ''}">Tableau de bord</a></li>
-								<li><a href="/creator/products" class="rounded-xl {isActiveLink('/creator/products') ? 'bg-primary-30 text-primary' : ''}">Mes produits</a></li>
-								<li><a href="/creator/orders" class="rounded-xl {isActiveLink('/creator/orders') ? 'bg-primary-30 text-primary' : ''}">Commandes</a></li>
-							{:else}
-								<!-- Menu pour clients connectés -->
-								<li><a href="/" class="rounded-xl {isActiveLink('/') ? 'bg-primary-30 text-primary' : ''}">Accueil</a></li>
-								<li><a href="/products/homme" class="rounded-xl {isActiveLink('/products/homme') ? 'bg-primary-30 text-primary' : ''}">Homme</a></li>
-								<li><a href="/products/femme" class="rounded-xl {isActiveLink('/products/femme') ? 'bg-primary-30 text-primary' : ''}">Femme</a></li>
-							{/if}
-						</ul>
-					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 </header>
+
+<!-- Overlay pour fermer les menus -->
+{#if isProfileMenuOpen}
+	<div 
+		class="fixed inset-0 z-40" 
+		role="button" 
+		tabindex="0"
+		on:click={closeMenus}
+		on:keydown={(e) => e.key === 'Escape' && closeMenus()}
+		aria-label="Fermer les menus"
+	></div>
+{/if}
 
 <style>
 	.header-glass {
@@ -240,12 +214,5 @@
 	.header-button:hover {
 		background: rgba(255, 255, 255, 0.2);
 		transform: translateY(-2px);
-	}
-	
-	.header-dropdown {
-		background: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(20px);
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 	}
 </style>

@@ -59,20 +59,12 @@
 		}
 		
 		// Ici on ajouterait au panier
-		alert(`Ajouté au panier: ${product.name} - Taille: ${selectedSize} - Couleur: ${selectedColor} - Quantité: ${quantity} - Prix: ${variant.price}€`);
+		alert(`Ajouté au panier: ${product.name} - Taille: ${selectedSize} - Couleur: ${selectedColor} - Quantité: ${quantity} - Prix: ${product.price}€`);
 		goto('/cart');
 	}
 
 	function getCurrentPrice() {
-		if (!product || !selectedSize || !selectedColor) {
-			return product?.priceRange?.min || 0;
-		}
-		
-		const variant = product.variants.find((v: any) => 
-			v.size === selectedSize && v.color === selectedColor
-		);
-		
-		return variant ? parseFloat(variant.price) : product.priceRange?.min || 0;
+		return product?.price || 0;
 	}
 
 	function getCurrentStock() {
@@ -146,19 +138,15 @@
 			<div>
 				<h1 class="text-3xl font-bold mb-2">{product.name}</h1>
 				<p class="text-2xl font-bold text-primary mb-4">
-					{#if product.priceRange.min === product.priceRange.max}
-						{product.priceRange.min.toFixed(2)}€
-					{:else}
-						{product.priceRange.min.toFixed(2)}€ - {product.priceRange.max.toFixed(2)}€
-					{/if}
+					{product.price.toFixed(2)}€
 				</p>
 				<p class="text-base-content/80">{product.description}</p>
 				
 				<!-- Tags -->
 				{#if product.tags && product.tags.length > 0}
-					<div class="flex gap-2 mt-4">
+					<div class="flex gap-2 mt-4 flex-wrap">
 						{#each product.tags as tag}
-							<span class="badge badge-outline">{tag}</span>
+							<span class="tag-badge">{tag}</span>
 						{/each}
 					</div>
 				{/if}

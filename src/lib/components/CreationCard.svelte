@@ -3,23 +3,18 @@
 	
 	export let creation: any;
 
-	// Fonctions pour gérer les prix et images
-	function getMinPrice() {
-		if (!creation.variants || creation.variants.length === 0) return 0;
-		return Math.min(...creation.variants.map((v: any) => parseFloat(v.price)));
-	}
-
-	function getMaxPrice() {
-		if (!creation.variants || creation.variants.length === 0) return 0;
-		return Math.max(...creation.variants.map((v: any) => parseFloat(v.price)));
-	}
-
+	// Fonctions pour gérer les images
 	function getFirstImage() {
-		if (!creation.variants || creation.variants.length === 0) return 'https://via.placeholder.com/400';
-		const firstVariant = creation.variants[0];
-		return firstVariant.images && firstVariant.images.length > 0 
-			? firstVariant.images[0] 
-			: 'https://via.placeholder.com/400';
+		if (creation.images && creation.images.length > 0) {
+			return creation.images[0];
+		}
+		if (creation.variants && creation.variants.length > 0) {
+			const firstVariant = creation.variants[0];
+			return firstVariant.images && firstVariant.images.length > 0 
+				? firstVariant.images[0] 
+				: 'https://via.placeholder.com/400';
+		}
+		return 'https://via.placeholder.com/400';
 	}
 
 	function handleProductClick() {
@@ -29,14 +24,14 @@
 	function handleCreatorClick(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		goto(`/creators/${creation.creatorId}`);
+		goto(`/creators/${creation.creator.id}`);
 	}
 
 	function handleCreatorKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			event.stopPropagation();
-			goto(`/creators/${creation.creatorId}`);
+			goto(`/creators/${creation.creator.id}`);
 		}
 	}
 </script>
@@ -63,11 +58,7 @@
 		
 		<div class="flex justify-between items-center">
 			<span class="text-2xl font-bold text-primary">
-				{#if getMinPrice() === getMaxPrice()}
-					{getMinPrice().toFixed(2)}€
-				{:else}
-					{getMinPrice().toFixed(2)}€ - {getMaxPrice().toFixed(2)}€
-				{/if}
+				{creation.price.toFixed(2)}€
 			</span>
 		</div>
 	</div>

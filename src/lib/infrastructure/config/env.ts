@@ -5,7 +5,7 @@
 
 export const env = {
 	// Base de données
-	DATABASE_URL: process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/kpsull',
+	DATABASE_URL: process.env.DATABASE_URL || 'postgresql://kpsull_user:kpsull_password@localhost:5432/kpsull',
 	
 	// Authentification
 	AUTH_SECRET: process.env.AUTH_SECRET || 'your-secret-key-here-change-in-production',

@@ -102,12 +102,8 @@
 	<title>Inscription Créateur - KPSULL</title>
 </svelte:head>
 
-<!-- Background avec gradient animé -->
-<div class="auth-background">
-	<div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10"></div>
-	
-	<!-- Container principal -->
-	<div class="relative flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 h-full">
+<!-- Container principal -->
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
 		<div class="w-full max-w-2xl">
 			<!-- Header avec animation -->
 			
@@ -115,6 +111,15 @@
 			<!-- Card d'inscription -->
 			<div class="auth-card" class:animate-slide-up={mounted}>
 				<div class="p-8">
+					<!-- Titre principal -->
+					<div class="text-center mb-8">
+						<h1 class="text-3xl font-bold text-base-content mb-2">
+							Rejoignez KPSULL
+						</h1>
+						<p class="text-base-content/70">
+							Créez votre compte créateur et commencez à vendre vos créations
+						</p>
+					</div>
 					{#if error}
 						<div class="alert alert-error mb-6 animate-shake">
 							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -454,6 +459,5 @@
 					← Retour au choix du profil
 				</a>
 			</div>
-		</div>
 	</div>
 </div>
