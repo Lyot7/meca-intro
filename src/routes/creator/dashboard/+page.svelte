@@ -79,14 +79,6 @@
 		</div>
 	{:else}
 		<main class="max-w-7xl mx-auto p-6">
-			<!-- Navigation -->
-			<div class="tabs tabs-boxed mb-8">
-				<a href="/creator/dashboard" class="tab tab-active">Tableau de bord</a>
-				<a href="/creator/products" class="tab">Mes produits</a>
-				<a href="/creator/orders" class="tab">Commandes</a>
-				<a href="/creator/profile" class="tab">Mon profil</a>
-			</div>
-
 			<!-- Statistiques -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 				<div class="stat bg-base-200 rounded-lg">

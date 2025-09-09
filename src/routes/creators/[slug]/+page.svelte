@@ -1,277 +1,169 @@
 <script lang="ts">
-	import CreationCard from '$lib/components/CreationCard.svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import CreationCard from '$lib/components/CreationCard.svelte';
 	
-	// Données mockées pour les créateurs
-	const creators = [
-		{
-			slug: 'marie-dubois',
-			name: 'Marie Dubois',
-			description: 'Créatrice passionnée de mode éthique et durable. Marie crée des pièces uniques inspirées de la nature et des cultures du monde.',
-			avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop',
-			website: 'https://mariedubois.com',
-			social: {
-				instagram: '@marie_dubois_creations',
-				twitter: '@marie_dubois'
-			},
-			joinedDate: '2023-01-15',
-			totalSales: 127,
-			rating: 4.8
-		},
-		{
-			slug: 'pierre-martin',
-			name: 'Pierre Martin',
-			description: 'Artisan du cuir depuis 15 ans, Pierre crée des accessoires en cuir véritable avec des techniques traditionnelles.',
-			avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-			website: 'https://pierremartin-cuir.com',
-			social: {
-				instagram: '@pierre_martin_cuir',
-				facebook: 'Pierre Martin Cuir'
-			},
-			joinedDate: '2022-08-20',
-			totalSales: 89,
-			rating: 4.9
-		},
-		{
-			slug: 'sophie-laurent',
-			name: 'Sophie Laurent',
-			description: 'Designer textile spécialisée dans les sacs et accessoires unisexes. Sophie privilégie les matières naturelles et les couleurs apaisantes.',
-			avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-			website: 'https://sophielaurent-design.com',
-			social: {
-				instagram: '@sophie_laurent_design',
-				pinterest: 'Sophie Laurent Design'
-			},
-			joinedDate: '2023-03-10',
-			totalSales: 156,
-			rating: 4.7
-		}
-	];
+	let creator: any = null;
+	let products: any[] = [];
+	let isLoading = true;
+	let error = '';
 
-	// Données mockées pour les créations
-	const allCreations = [
-		{
-			id: 1,
-			name: "T-shirt Oversized",
-			creator: "Marie Dubois",
-			creatorSlug: "marie-dubois",
-			price: 45,
-			image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-			gender: "homme",
-			category: "vêtements"
-		},
-		{
-			id: 2,
-			name: "Sweat à Capuche",
-			creator: "Pierre Martin",
-			creatorSlug: "pierre-martin",
-			price: 65,
-			image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
-			gender: "homme",
-			category: "vêtements"
-		},
-		{
-			id: 3,
-			name: "Sac Tote Unisexe",
-			creator: "Sophie Laurent",
-			creatorSlug: "sophie-laurent",
-			price: 35,
-			image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-			gender: "unisexe",
-			category: "accessoires"
-		},
-		{
-			id: 4,
-			name: "Casquette Vintage",
-			creator: "Pierre Martin",
-			creatorSlug: "pierre-martin",
-			price: 25,
-			image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop",
-			gender: "homme",
-			category: "accessoires"
-		},
-		{
-			id: 5,
-			name: "Bracelet Cuir",
-			creator: "Sophie Laurent",
-			creatorSlug: "sophie-laurent",
-			price: 20,
-			image: "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=400&fit=crop",
-			gender: "unisexe",
-			category: "accessoires"
-		},
-		{
-			id: 6,
-			name: "Veste Denim",
-			creator: "Pierre Martin",
-			creatorSlug: "pierre-martin",
-			price: 85,
-			image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop",
-			gender: "homme",
-			category: "vêtements"
-		},
-		{
-			id: 7,
-			name: "Robe Midi Élégante",
-			creator: "Marie Dubois",
-			creatorSlug: "marie-dubois",
-			price: 75,
-			image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop",
-			gender: "femme",
-			category: "vêtements"
-		},
-		{
-			id: 8,
-			name: "Blouse Vintage",
-			creator: "Marie Dubois",
-			creatorSlug: "marie-dubois",
-			price: 55,
-			image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=400&fit=crop",
-			gender: "femme",
-			category: "vêtements"
+	onMount(async () => {
+		const slug = $page.params.slug;
+		if (!slug) {
+			error = 'Slug du créateur manquant';
+			isLoading = false;
+			return;
 		}
-	];
 
-	// Récupérer le slug depuis l'URL
-	$: creatorSlug = $page.params.slug;
-	
-	// Trouver le créateur correspondant
-	$: currentCreator = creators.find(creator => creator.slug === creatorSlug);
-	
-	// Filtrer les créations du créateur
-	$: creatorCreations = allCreations.filter(creation => creation.creatorSlug === creatorSlug);
-	
-	// État du filtre actuel
-	let selectedFilter: string = 'tous';
-	
-	// Produits filtrés selon la catégorie sélectionnée
-	$: filteredCreations = selectedFilter === 'tous' 
-		? creatorCreations 
-		: creatorCreations.filter(creation => creation.category === selectedFilter);
+		try {
+			// Récupérer les informations du créateur
+			const creatorResponse = await fetch(`/api/creators/${slug}`);
+			const creatorData = await creatorResponse.json();
+
+			if (creatorData.success) {
+				creator = creatorData.creator;
+				
+				// Récupérer les produits du créateur
+				const productsResponse = await fetch(`/api/products?creatorId=${creator.id}`);
+				const productsData = await productsResponse.json();
+				
+				if (productsData.success) {
+					products = productsData.products || [];
+				}
+			} else {
+				error = creatorData.error || 'Créateur non trouvé';
+			}
+		} catch (err) {
+			console.error('Erreur:', err);
+			error = 'Erreur de connexion';
+		} finally {
+			isLoading = false;
+		}
+	});
 </script>
 
 <svelte:head>
-	<title>{currentCreator?.name || 'Créateur'} - KPSULL</title>
-	<meta name="description" content="Découvrez les créations de {currentCreator?.name || 'ce créateur'} sur KPSULL" />
+	<title>{creator?.name || 'Créateur'} - KPSULL</title>
+	<meta name="description" content={creator?.description || ''} />
 </svelte:head>
 
-{#if currentCreator}
-	<div class="max-w-6xl mx-auto px-4">
-		<!-- Header du créateur -->
-		<div class="text-center mb-12">
-			<div class="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4" style="border-color: var(--color-primary);">
-				<img 
-					src={currentCreator.avatar} 
-					alt={currentCreator.name}
-					class="w-full h-full object-cover"
-				/>
+{#if isLoading}
+	<div class="flex items-center justify-center min-h-96">
+		<div class="loading loading-spinner loading-lg text-primary"></div>
+	</div>
+{:else if error}
+	<div class="alert alert-error">
+		<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+		</svg>
+		<span>{error}</span>
+	</div>
+{:else if creator}
+	<!-- Hero Section -->
+	<section class="hero bg-gradient-to-r from-primary to-secondary text-primary-content">
+		<div class="hero-content text-center">
+			<div class="max-w-4xl">
+				<div class="avatar mb-6">
+					<div class="w-32 rounded-full ring ring-primary-content ring-offset-base-100 ring-offset-2">
+						<img 
+							src={creator.profileImage || 'https://via.placeholder.com/128?text=👤'} 
+							alt={creator.name}
+						/>
+					</div>
+				</div>
+				<h1 class="text-5xl font-bold mb-4">{creator.name}</h1>
+				<p class="text-xl mb-6">{creator.description}</p>
+				
+				{#if creator.website}
+					<div class="flex justify-center gap-4">
+						<a href={creator.website.startsWith('http') ? creator.website : `https://${creator.website}`} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-primary-content">
+							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+								<path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"></path>
+							</svg>
+							Site Web
+						</a>
+					</div>
+				{/if}
 			</div>
-			<h1 class="text-4xl font-bold mb-4" style="color: var(--color-text);">
-				{currentCreator.name}
-			</h1>
-			<p class="text-lg max-w-2xl mx-auto mb-6" style="color: var(--color-text-muted);">
-				{currentCreator.description}
-			</p>
+		</div>
+	</section>
+
+	<!-- Informations du créateur -->
+	<section class="py-12 bg-base-100">
+		<div class="max-w-6xl mx-auto px-4">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+				<!-- Informations principales -->
+				<div class="lg:col-span-2">
+					<div class="card bg-base-200 p-6">
+						<h2 class="text-2xl font-bold mb-4">À propos</h2>
+						<p class="text-base-content/80 leading-relaxed">{creator.description}</p>
+						
+						{#if creator.socialMedia}
+							<div class="mt-6">
+								<h3 class="text-lg font-semibold mb-3">Réseaux sociaux</h3>
+								<div class="flex gap-4">
+									{#if creator.socialMedia.instagram}
+										<a href="https://instagram.com/{creator.socialMedia.instagram.replace('@', '')}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+											<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+											</svg>
+											{creator.socialMedia.instagram}
+										</a>
+									{/if}
+									{#if creator.socialMedia.facebook}
+										<a href="https://facebook.com/{creator.socialMedia.facebook}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">
+											<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+											</svg>
+											{creator.socialMedia.facebook}
+										</a>
+									{/if}
+								</div>
+							</div>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Statistiques -->
+				<div class="space-y-6">
+					<div class="card bg-base-200 p-6">
+						<h3 class="text-lg font-semibold mb-4">Statistiques</h3>
+						<div class="space-y-3">
+							<div class="flex justify-between">
+								<span>Produits</span>
+								<span class="font-semibold">{products.length}</span>
+							</div>
+							<div class="flex justify-between">
+								<span>Membre depuis</span>
+								<span class="font-semibold">{new Date(creator.createdAt).toLocaleDateString('fr-FR')}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Créations -->
+	<section class="py-12 bg-base-200">
+		<div class="max-w-6xl mx-auto px-4">
+			<h2 class="text-3xl font-bold text-center mb-8">Créations de {creator.name}</h2>
 			
-			<!-- Informations du créateur -->
-			<div class="flex flex-wrap justify-center gap-6 mb-8">
-				<div class="text-center">
-					<div class="text-2xl font-bold" style="color: var(--color-primary);">{currentCreator.totalSales}</div>
-					<div class="text-sm" style="color: var(--color-text-muted);">Ventes</div>
+			{#if products.length === 0}
+				<div class="text-center py-12">
+					<h3 class="text-xl font-semibold mb-2">Aucune création disponible</h3>
+					<p class="text-base-content/70">Ce créateur n'a pas encore publié de créations.</p>
 				</div>
-				<div class="text-center">
-					<div class="text-2xl font-bold" style="color: var(--color-primary);">{currentCreator.rating}</div>
-					<div class="text-sm" style="color: var(--color-text-muted);">Note</div>
+			{:else}
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+					{#each products as product}
+						<CreationCard 
+							creation={product}
+						/>
+					{/each}
 				</div>
-				<div class="text-center">
-					<div class="text-2xl font-bold" style="color: var(--color-primary);">{creatorCreations.length}</div>
-					<div class="text-sm" style="color: var(--color-text-muted);">Créations</div>
-				</div>
-			</div>
-
-			<!-- Liens sociaux et site web -->
-			<div class="flex flex-wrap justify-center gap-4">
-				{#if currentCreator.website}
-					<a href={currentCreator.website} target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-primary-30" style="color: var(--color-text-muted);">
-						🌐 Site web
-					</a>
-				{/if}
-				{#if currentCreator.social.instagram}
-					<a href="https://instagram.com/{currentCreator.social.instagram.replace('@', '')}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-primary-30" style="color: var(--color-text-muted);">
-						📷 {currentCreator.social.instagram}
-					</a>
-				{/if}
-				{#if currentCreator.social.twitter}
-					<a href="https://twitter.com/{currentCreator.social.twitter.replace('@', '')}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-primary-30" style="color: var(--color-text-muted);">
-						🐦 {currentCreator.social.twitter}
-					</a>
-				{/if}
-			</div>
+			{/if}
 		</div>
-
-		<!-- Filtres -->
-		<div class="flex flex-wrap gap-4 mb-8">
-			<button 
-				class="px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200 {selectedFilter === 'tous' ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" 
-				style="color: {selectedFilter === 'tous' ? 'var(--color-primary)' : 'var(--color-text-muted)'};"
-				on:click={() => selectedFilter = 'tous'}
-			>
-				Tous
-			</button>
-			<button 
-				class="px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200 {selectedFilter === 'vêtements' ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" 
-				style="color: {selectedFilter === 'vêtements' ? 'var(--color-primary)' : 'var(--color-text-muted)'};"
-				on:click={() => selectedFilter = 'vêtements'}
-			>
-				Vêtements
-			</button>
-			<button 
-				class="px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200 {selectedFilter === 'accessoires' ? 'bg-primary-30 text-primary' : 'hover:bg-primary-30'}" 
-				style="color: {selectedFilter === 'accessoires' ? 'var(--color-primary)' : 'var(--color-text-muted)'};"
-				on:click={() => selectedFilter = 'accessoires'}
-			>
-				Accessoires
-			</button>
-		</div>
-
-		<!-- Grille des créations -->
-		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-			{#each filteredCreations as creation}
-				<CreationCard 
-					creation={{
-						id: creation.id.toString(),
-						name: creation.name,
-						price: creation.price,
-						image: creation.image,
-						creator: { name: creation.creator },
-						creatorId: creation.creatorSlug
-					}}
-				/>
-			{/each}
-		</div>
-
-		<!-- Message si aucune création -->
-		{#if filteredCreations.length === 0}
-			<div class="text-center py-12">
-				<p class="text-lg" style="color: var(--color-text-muted);">
-					Aucune création trouvée pour cette catégorie.
-				</p>
-			</div>
-		{/if}
-	</div>
-{:else}
-	<!-- Page 404 pour créateur non trouvé -->
-	<div class="max-w-6xl mx-auto px-4">
-		<div class="text-center">
-			<h1 class="text-4xl font-bold mb-4" style="color: var(--color-text);">
-				Créateur non trouvé
-			</h1>
-			<p class="text-lg mb-8" style="color: var(--color-text-muted);">
-				Le créateur que vous recherchez n'existe pas ou a été supprimé.
-			</p>
-			<a href="/" class="px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200" style="background-color: var(--color-primary); color: white;">
-				Retour à l'accueil
-			</a>
-		</div>
-	</div>
+	</section>
 {/if}

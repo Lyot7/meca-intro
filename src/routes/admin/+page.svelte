@@ -73,7 +73,6 @@
 	let orders: Order[] = [];
 	let products: any[] = [];
 	let isLoading = true;
-	let activeTab = 'overview';
 
 	onMount(async () => {
 		// Vérifier si l'utilisateur est connecté et est admin
@@ -148,15 +147,6 @@
 		}
 	}
 
-	async function logout() {
-		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
-			authStore.logout();
-			goto('/');
-		} catch (error) {
-			console.error('Erreur lors de la déconnexion:', error);
-		}
-	}
 
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -200,56 +190,14 @@
 			<div class="loading loading-spinner loading-lg"></div>
 		</div>
 	{:else}
-		<!-- Header Admin -->
-		<header class="bg-base-200 border-b border-base-300">
-			<div class="max-w-7xl mx-auto px-6 py-4">
-				<div class="flex items-center justify-between">
-					<div>
-						<h1 class="text-2xl font-bold text-base-content">Tableau de bord Admin</h1>
-						<p class="text-base-content/70">Gestion de la plateforme KPSULL</p>
-					</div>
-					<button class="btn btn-outline btn-error" on:click={logout}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-						</svg>
-						Déconnexion
-					</button>
-				</div>
-			</div>
-		</header>
-
 		<main class="max-w-7xl mx-auto p-6">
-			<!-- Navigation par onglets -->
-			<div class="tabs tabs-boxed mb-8">
-				<button 
-					class="tab {activeTab === 'overview' ? 'tab-active' : ''}" 
-					on:click={() => activeTab = 'overview'}
-				>
-					Vue d'ensemble
-				</button>
-				<button 
-					class="tab {activeTab === 'creators' ? 'tab-active' : ''}" 
-					on:click={() => activeTab = 'creators'}
-				>
-					Créateurs
-				</button>
-				<button 
-					class="tab {activeTab === 'orders' ? 'tab-active' : ''}" 
-					on:click={() => activeTab = 'orders'}
-				>
-					Commandes
-				</button>
-				<button 
-					class="tab {activeTab === 'products' ? 'tab-active' : ''}" 
-					on:click={() => activeTab = 'products'}
-				>
-					Produits
-				</button>
+			<!-- Titre de la page -->
+			<div class="mb-8">
+				<h1 class="text-3xl font-bold text-base-content">Tableau de bord Admin</h1>
+				<p class="text-base-content/70">Gestion de la plateforme KPSULL</p>
 			</div>
 
-			<!-- Vue d'ensemble -->
-			{#if activeTab === 'overview'}
-				<!-- Statistiques principales -->
+			<!-- Statistiques principales -->
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 					<div class="stat bg-base-200 rounded-lg">
 						<div class="stat-figure text-primary">
@@ -393,188 +341,6 @@
 						</div>
 					</div>
 				</div>
-			{/if}
-
-			<!-- Créateurs -->
-			{#if activeTab === 'creators'}
-				<div class="card bg-base-200">
-					<div class="card-body">
-						<h2 class="card-title">Gestion des créateurs</h2>
-						<div class="overflow-x-auto">
-							<table class="table">
-								<thead>
-									<tr>
-										<th>Créateur</th>
-										<th>Contact</th>
-										<th>Abonnement</th>
-										<th>Statut</th>
-										<th>Statistiques</th>
-										<th>Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each creators as creator}
-										<tr>
-											<td>
-												<div class="flex items-center gap-3">
-													<div class="avatar">
-														<div class="w-12 h-12 rounded-full">
-															<img src={creator.profileImage || 'https://via.placeholder.com/48'} alt={creator.name} />
-														</div>
-													</div>
-													<div>
-														<div class="font-bold">{creator.name}</div>
-														<div class="text-sm opacity-50">{creator.description}</div>
-													</div>
-												</div>
-											</td>
-											<td>
-												<div class="text-sm">
-													<div>{creator.email}</div>
-													{#if creator.website}
-														<div class="text-primary">{creator.website}</div>
-													{/if}
-												</div>
-											</td>
-											<td>
-												<div class="text-sm">
-													<span class="badge badge-{creator.subscriptionType === 'yearly' ? 'success' : 'warning'}">
-														{creator.subscriptionType}
-													</span>
-													<div class="text-xs opacity-70">
-														Expire: {formatDate(creator.subscriptionExpiresAt)}
-													</div>
-												</div>
-											</td>
-											<td>
-												<span class="badge {getStatusBadgeClass(creator.status)}">
-													{creator.status}
-												</span>
-											</td>
-											<td>
-												<div class="text-sm">
-													<div>Produits: {creator.stats.productCount}</div>
-													<div>Commandes: {creator.stats.orderCount}</div>
-													<div>Revenus: {formatCurrency(creator.stats.totalRevenue)}</div>
-												</div>
-											</td>
-											<td>
-												<div class="flex gap-2">
-													<button class="btn btn-sm btn-outline">Voir</button>
-													<button class="btn btn-sm btn-outline">Modifier</button>
-												</div>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Commandes -->
-			{#if activeTab === 'orders'}
-				<div class="card bg-base-200">
-					<div class="card-body">
-						<h2 class="card-title">Gestion des commandes</h2>
-						<div class="overflow-x-auto">
-							<table class="table">
-								<thead>
-									<tr>
-										<th>Commande</th>
-										<th>Client</th>
-										<th>Montant</th>
-										<th>Statut</th>
-										<th>Date</th>
-										<th>Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each orders as order}
-										<tr>
-											<td>
-												<div class="text-sm">
-													<div class="font-bold">#{order.id.slice(-8)}</div>
-													<div class="opacity-70">{order.items.length} article(s)</div>
-												</div>
-											</td>
-											<td>
-												<div class="text-sm">
-													<div class="font-medium">{order.customer.name}</div>
-													<div class="opacity-70">{order.customer.email}</div>
-												</div>
-											</td>
-											<td>
-												<div class="text-sm">
-													<div class="font-bold">{formatCurrency(parseFloat(order.total))}</div>
-													<div class="opacity-70">+ {formatCurrency(parseFloat(order.shippingCost))} frais</div>
-												</div>
-											</td>
-											<td>
-												<span class="badge {getStatusBadgeClass(order.status)}">
-													{order.status}
-												</span>
-											</td>
-											<td>
-												<div class="text-sm">
-													<div>{formatDate(order.createdAt)}</div>
-													{#if order.paidAt}
-														<div class="opacity-70">Payé: {formatDate(order.paidAt)}</div>
-													{/if}
-												</div>
-											</td>
-											<td>
-												<div class="flex gap-2">
-													<button class="btn btn-sm btn-outline">Voir</button>
-													<button class="btn btn-sm btn-outline">Modifier</button>
-												</div>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Produits -->
-			{#if activeTab === 'products'}
-				<div class="card bg-base-200">
-					<div class="card-body">
-						<h2 class="card-title">Gestion des produits</h2>
-						<div class="space-y-4">
-							{#each products as product}
-								<div class="flex items-center gap-4 p-4 bg-base-100 rounded-lg">
-									<div class="avatar">
-										<div class="w-16 h-16 rounded">
-											<img src={product.getFirstImage?.() || 'https://via.placeholder.com/64'} alt={product.name} />
-										</div>
-									</div>
-									<div class="flex-1">
-										<h3 class="font-bold text-lg">{product.name}</h3>
-										<p class="text-sm text-base-content/70 mb-2">{product.description}</p>
-										<div class="flex gap-4 text-sm">
-											<span class="badge badge-outline">{product.gender}</span>
-											<span class="badge {getStatusBadgeClass(product.status)}">{product.status}</span>
-											<span class="text-primary font-medium">
-												{product.getMinPrice?.()}€ - {product.getMaxPrice?.()}€
-											</span>
-										</div>
-									</div>
-									<div class="text-right">
-										<div class="flex gap-2">
-											<button class="btn btn-sm btn-outline">Voir</button>
-											<button class="btn btn-sm btn-outline">Modifier</button>
-										</div>
-									</div>
-								</div>
-							{/each}
-						</div>
-					</div>
-				</div>
-			{/if}
 		</main>
 	{/if}
 </div>

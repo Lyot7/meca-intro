@@ -5,7 +5,9 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { mockProducts } from '$lib/infrastructure/mockData.js';
+import { db } from '$lib/infrastructure/database/config.js';
+import { products, productVariants, creators } from '$lib/infrastructure/database/schema.js';
+import { eq } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -18,8 +20,29 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
-		// Trouver le produit
-		const product = mockProducts.find(p => p.id === productId);
+		// Récupérer le produit avec le créateur
+		const [product] = await db
+			.select({
+				id: products.id,
+				name: products.name,
+				description: products.description,
+				gender: products.gender,
+				status: products.status,
+				tags: products.tags,
+				createdAt: products.createdAt,
+				updatedAt: products.updatedAt,
+				creator: {
+					id: creators.id,
+					name: creators.name,
+					description: creators.description,
+					profileImage: creators.profileImage,
+					website: creators.website,
+					socialMedia: creators.socialMedia
+				}
+			})
+			.from(products)
+			.leftJoin(creators, eq(products.creatorId, creators.id))
+			.where(eq(products.id, productId));
 
 		if (!product) {
 			return json(
@@ -28,9 +51,44 @@ export const GET: RequestHandler = async ({ params }) => {
 			);
 		}
 
+		// Récupérer les variantes du produit
+		const variants = await db
+			.select({
+				id: productVariants.id,
+				size: productVariants.size,
+				color: productVariants.color,
+				stock: productVariants.stock,
+				price: productVariants.price,
+				images: productVariants.images
+			})
+			.from(productVariants)
+			.where(eq(productVariants.productId, productId));
+
+		// Organiser les données pour le frontend
+		const productData = {
+			id: product.id,
+			name: product.name,
+			description: product.description,
+			gender: product.gender,
+			status: product.status,
+			tags: product.tags || [],
+			creator: product.creator,
+			variants: variants,
+			// Extraire les tailles et couleurs uniques
+			sizes: [...new Set(variants.map(v => v.size).filter(Boolean))],
+			colors: [...new Set(variants.map(v => v.color).filter(Boolean))],
+			// Prix minimum et maximum
+			priceRange: variants.length > 0 ? {
+				min: Math.min(...variants.map(v => parseFloat(v.price))),
+				max: Math.max(...variants.map(v => parseFloat(v.price)))
+			} : { min: 0, max: 0 },
+			// Images (prendre la première image de chaque variante)
+			images: variants.length > 0 ? variants[0].images || [] : []
+		};
+
 		return json({
 			success: true,
-			product
+			product: productData
 		});
 	} catch (error) {
 		console.error('Erreur lors de la récupération du produit:', error);

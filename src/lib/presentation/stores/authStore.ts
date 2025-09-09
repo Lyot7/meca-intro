@@ -190,6 +190,16 @@ function createAuthStore() {
 		},
 
 		/**
+		 * Met à jour les informations de l'utilisateur
+		 */
+		updateUser: (userData: Partial<Creator>) => {
+			update(state => ({
+				...state,
+				user: state.user ? { ...state.user, ...userData } : null
+			}));
+		},
+
+		/**
 		 * Déconnecte l'utilisateur
 		 */
 		logout: () => {

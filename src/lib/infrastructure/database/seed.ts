@@ -5,18 +5,19 @@
 
 import { db } from './config.js';
 import { creators, products, productVariants } from './schema.js';
-import { argon2id } from '@node-rs/argon2';
+import { hash } from '@node-rs/argon2';
+import { randomUUID } from 'crypto';
 
 export async function seedDatabase() {
 	try {
 		console.log('🌱 Début du seed de la base de données...');
 
 		// Hasher le mot de passe commun
-		const hashedPassword = await argon2id.hash('password');
+		const hashedPassword = await hash('password');
 
 		// Créer l'utilisateur admin
 		const [admin] = await db.insert(creators).values({
-			id: 'admin_001',
+			id: randomUUID(),
 			name: 'admin',
 			email: 'admin@kpsull.com',
 			passwordHash: hashedPassword,
@@ -31,7 +32,7 @@ export async function seedDatabase() {
 
 		// Créer l'utilisateur créateur
 		const [creator] = await db.insert(creators).values({
-			id: 'creator_001',
+			id: randomUUID(),
 			name: 'créateur',
 			email: 'createur@kpsull.com',
 			passwordHash: hashedPassword,
@@ -51,7 +52,7 @@ export async function seedDatabase() {
 
 		// Créer l'utilisateur client
 		const [client] = await db.insert(creators).values({
-			id: 'client_001',
+			id: randomUUID(),
 			name: 'client',
 			email: 'client@kpsull.com',
 			passwordHash: hashedPassword,
@@ -68,7 +69,7 @@ export async function seedDatabase() {
 
 		// Créer des produits pour le créateur
 		const product1 = await db.insert(products).values({
-			id: 'product_001',
+			id: randomUUID(),
 			name: 'Robe Élégante',
 			description: 'Une robe élégante en soie naturelle, parfaite pour les occasions spéciales. Coupe ajustée et finitions soignées.',
 			creatorId: creator.id,
@@ -80,7 +81,7 @@ export async function seedDatabase() {
 		}).returning();
 
 		const product2 = await db.insert(products).values({
-			id: 'product_002',
+			id: randomUUID(),
 			name: 'Veste Vintage',
 			description: 'Veste vintage en cuir véritable, style rétro des années 80. Parfaite pour un look décontracté et stylé.',
 			creatorId: creator.id,
@@ -92,7 +93,7 @@ export async function seedDatabase() {
 		}).returning();
 
 		const product3 = await db.insert(products).values({
-			id: 'product_003',
+			id: randomUUID(),
 			name: 'Pantalon Moderne',
 			description: 'Pantalon moderne en coton bio, coupe droite et confortable. Idéal pour le quotidien et le bureau.',
 			creatorId: creator.id,
@@ -107,7 +108,7 @@ export async function seedDatabase() {
 		await db.insert(productVariants).values([
 			// Variantes pour la robe
 			{
-				id: 'variant_001',
+				id: randomUUID(),
 				productId: product1[0].id,
 				size: 'S',
 				color: 'Noir',
@@ -118,7 +119,7 @@ export async function seedDatabase() {
 				updatedAt: new Date(),
 			},
 			{
-				id: 'variant_002',
+				id: randomUUID(),
 				productId: product1[0].id,
 				size: 'M',
 				color: 'Noir',
@@ -129,7 +130,7 @@ export async function seedDatabase() {
 				updatedAt: new Date(),
 			},
 			{
-				id: 'variant_003',
+				id: randomUUID(),
 				productId: product1[0].id,
 				size: 'L',
 				color: 'Rouge',
@@ -141,7 +142,7 @@ export async function seedDatabase() {
 			},
 			// Variantes pour la veste
 			{
-				id: 'variant_004',
+				id: randomUUID(),
 				productId: product2[0].id,
 				size: 'M',
 				color: 'Brun',
@@ -152,7 +153,7 @@ export async function seedDatabase() {
 				updatedAt: new Date(),
 			},
 			{
-				id: 'variant_005',
+				id: randomUUID(),
 				productId: product2[0].id,
 				size: 'L',
 				color: 'Noir',
@@ -164,7 +165,7 @@ export async function seedDatabase() {
 			},
 			// Variantes pour le pantalon
 			{
-				id: 'variant_006',
+				id: randomUUID(),
 				productId: product3[0].id,
 				size: '32',
 				color: 'Bleu',
@@ -175,7 +176,7 @@ export async function seedDatabase() {
 				updatedAt: new Date(),
 			},
 			{
-				id: 'variant_007',
+				id: randomUUID(),
 				productId: product3[0].id,
 				size: '34',
 				color: 'Gris',
